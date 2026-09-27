@@ -290,7 +290,7 @@ export function ThemeEditor({ theme, onChange, style, names, hasImage }: Props) 
                 className={cn("rounded-2xl border p-3 text-left transition", active ? "border-rose-400 bg-rose-50" : "border-line bg-white hover:border-rose-200")}
               >
                 <span
-                  className="block truncate leading-tight text-ink-900"
+                  className="block px-1 leading-tight break-words text-ink-900"
                   style={{ fontFamily: `${f.script}, cursive`, fontSize: `${2 * f.nameScale}rem`, textTransform: f.nameCase ?? "none", letterSpacing: f.nameTracking }}
                 >
                   {a || "Anna"} &amp; {b || "Tom"}

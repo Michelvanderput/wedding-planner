@@ -137,7 +137,7 @@ export function RsvpSettings({
           disabled={questions.length >= 8}
           onClick={() => onQuestions([...questions, { id: uid().slice(0, 8), label: "", type: "text", options: [] }])}
         >
-          <Plus className="size-4" aria-hidden /> Vraag
+          <Plus className="size-4" aria-hidden /> Eigen RSVP-vraag
         </Button>
         {QUESTION_SUGGESTIONS.filter((s) => !questions.some((q) => q.label === s.label)).map((s) => (
           <button
