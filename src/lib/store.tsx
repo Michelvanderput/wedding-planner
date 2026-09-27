@@ -116,8 +116,11 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
           const next = { ...c, [key]: (c[key] as RowOf<typeof key>[]).filter((r) => r.id !== id) } as Collections;
           if (key === "seating_tables")
             next.guests = next.guests.map((g) => (g.table_id === id ? { ...g, table_id: null } : g));
-          if (key === "vendors")
+          if (key === "vendors") {
             next.budget_items = next.budget_items.map((b) => (b.vendor_id === id ? { ...b, vendor_id: null } : b));
+            next.documents = next.documents.map((d) => (d.vendor_id === id ? { ...d, vendor_id: null } : d));
+          }
+          if (key === "gifts") next.gift_claims = next.gift_claims.filter((c) => c.gift_id !== id);
           return next;
         });
         persist(adapter.remove(key, id));

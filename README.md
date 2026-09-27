@@ -5,14 +5,16 @@ Een moderne, Nederlandstalige webapp waarmee stellen hun bruiloft zelf plannen. 
 | Onderdeel | Wat je ermee doet |
 |---|---|
 | **Overzicht** | Live aftellen, voortgangsring, statistieken, eerstvolgende taken, RSVP en budget in één oogopslag |
-| **Takenlijst** | Complete checklist die terugrekent vanaf de trouwdatum, gegroepeerd per periode of categorie |
-| **Gasten** | Dag- en avondgasten, RSVP-status, +1, dieetwensen, **Excel-template + import/export**, persoonlijke uitnodigingslinks |
-| **Budget** | Automatische verdeling, gepland vs. besteed per categorie, betaalstatus, gekoppeld aan leveranciers |
-| **Leveranciers** | Pipeline-bord (Idee → Contact → Offerte → Geboekt), beoordelingen, direct naar budget |
+| **Takenlijst** | Complete checklist die terugrekent vanaf de trouwdatum, per periode of categorie; taken toewijzen aan wie ze oppakt |
+| **Gasten** | Dag- en avondgasten, RSVP, +1, dieetwensen, menukeuze en eigen vragen, Excel-template + import/export, persoonlijke links, QR-kaartjes en RSVP-herinneringen via WhatsApp/e-mail |
+| **Budget** | Automatische verdeling, gepland vs. besteed, betaaldata en aanbetalingen, 'nog te betalen'-overzicht, waarschuwing bij overschrijding |
+| **Leveranciers** | Pipeline-bord (Idee → Contact → Offerte → Geboekt), beoordelingen, direct naar budget, contracten en offertes uploaden |
 | **Draaiboek** | Tijdlijn van de grote dag, printbaar; per onderdeel kiezen wie het op de uitnodiging ziet |
-| **Tafelschikking** | Gasten naar tafels slepen (of kiezen via menu), capaciteitscontrole, visuele tafels |
+| **Tafelschikking** | Gasten naar tafels slepen (of kiezen via menu), capaciteitscontrole, visuele tafels, printversie |
+| **Fotolijst** | Standaardlijst van must-have foto's, eigen toevoegingen, afvinken, printen of als tekst naar je fotograaf |
+| **Cadeaulijst** | Cadeaus en geldpotten; gasten reserveren of dragen bij via hun uitnodiging, jullie zien wie wat geeft |
 | **Inspiratie** | Moodboard met AI-gegenereerde beelden in jullie stijl en kleuren |
-| **Uitnodiging** | Eigen uitnodigingswebsite voor gasten: programma, locatie + route, dresscode, cadeautip, FAQ, agenda-export en RSVP |
+| **Uitnodiging** | Eigen uitnodigingswebsite voor gasten: programma, locatie + route, praktische info, FAQ, cadeaulijst, gastenboek, agenda-export en RSVP. Vormgeving naar keuze: 12 thema's, eigen kleuren, 10 lettertypecombinaties, achtergronden, versiering, indelingen en volgorde van onderdelen, met live voorbeeld |
 | **Samen plannen** | Partner uitnodigen via een eenmalige link; maximaal twee beheerders per bruiloft |
 
 ### Voor gasten
@@ -68,8 +70,9 @@ Open http://localhost:3000.
 2. Ga naar **SQL Editor** en voer **op volgorde** uit (plakken → **Run**):
    1. [`supabase/migrations/20260927000000_init.sql`](supabase/migrations/20260927000000_init.sql)
    2. [`supabase/migrations/20260928000000_invitation_and_partner.sql`](supabase/migrations/20260928000000_invitation_and_partner.sql)
+   3. [`supabase/migrations/20260929000000_features.sql`](supabase/migrations/20260929000000_features.sql): taken toewijzen, betaaldata, menukeuze, cadeaulijst, fotolijst, gastenboek en documentopslag
 
-   Beide scripts kun je veilig opnieuw draaien. (Of met de CLI: `supabase link --project-ref <ref>` en daarna `supabase db push`.)
+   Alle scripts kun je veilig opnieuw draaien. Is de derde nog niet uitgevoerd, dan werkt de rest van de app gewoon; alleen de nieuwe onderdelen laten dan een melding zien. (Of met de CLI: `supabase link --project-ref <ref>` en daarna `supabase db push`.)
 3. Kopieer uit **Project Settings → API** de *Project URL* en de *anon public key* naar:
    ```
    NEXT_PUBLIC_SUPABASE_URL=...

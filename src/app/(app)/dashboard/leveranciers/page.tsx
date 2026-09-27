@@ -4,6 +4,7 @@ import { LayoutGroup, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Copy, ExternalLink, Mail, Phone, Plus, Sparkles, Star, Store, Trash2, Wallet } from "lucide-react";
 import { useState } from "react";
 import { Fab } from "@/components/ui/fab";
+import { VendorDocuments } from "@/components/dashboard/vendor-documents";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/field";
 import { Badge, EmptyState, PageHeader } from "@/components/ui/misc";
@@ -12,6 +13,7 @@ import { useToast } from "@/components/ui/toast";
 import { aiText, useAiEnabled } from "@/lib/ai";
 import { BUDGET_CATEGORIES, VENDOR_CATEGORIES, VENDOR_STATUS } from "@/lib/defaults";
 import { useWedding } from "@/lib/store";
+import { getSupabaseBrowser } from "@/lib/supabase/client";
 import type { Vendor, VendorStatus } from "@/lib/types";
 import { cn, coupleName, formatDate, formatEuro, nowIso, uid } from "@/lib/utils";
 
@@ -51,7 +53,7 @@ const BUDGET_FOR: Record<string, string> = {
 };
 
 export default function VendorsPage() {
-  const { wedding, vendors, budget_items, guests, add, update, remove } = useWedding();
+  const { wedding, vendors, budget_items, guests, documents, add, update, remove } = useWedding();
   const toast = useToast();
   const ai = useAiEnabled();
   const [open, setOpen] = useState(false);
@@ -82,6 +84,15 @@ export default function VendorsPage() {
     toast.success(editing ? "Leverancier bijgewerkt" : "Leverancier toegevoegd");
   }
 
+  /** Leverancier weg = ook zijn documenten (rij + bestand) weg. */
+  function removeVendor(id: string) {
+    const docs = documents.filter((d) => d.vendor_id === id);
+    const sb = getSupabaseBrowser();
+    if (sb && docs.length) void sb.storage.from("documents").remove(docs.map((d) => d.path));
+    docs.forEach((d) => remove("documents", d.id));
+    remove("vendors", id);
+  }
+
   function move(v: Vendor, dir: -1 | 1) {
     const idx = VENDOR_STATUS.findIndex((s) => s.value === v.status);
     const next = VENDOR_STATUS[idx + dir];
@@ -107,6 +118,9 @@ export default function VendorsPage() {
       actual: v.status === "booked" ? (v.price ?? 0) : 0,
       paid: false,
       vendor_id: v.id,
+      due_date: null,
+      deposit: 0,
+      deposit_paid: false,
     });
     toast.success("Toegevoegd aan budget");
   }
@@ -240,7 +254,7 @@ export default function VendorsPage() {
           <>
             {editing && (
               <>
-                <Button variant="danger" onClick={() => { remove("vendors", editing.id); setOpen(false); toast.info("Leverancier verwijderd"); }}>
+                <Button variant="danger" onClick={() => { removeVendor(editing.id); setOpen(false); toast.info("Leverancier verwijderd"); }}>
                   <Trash2 className="size-4" aria-hidden /> Verwijderen
                 </Button>
                 <Button variant="ghost" className="mr-auto" onClick={() => toBudget({ ...editing, ...draft })}>
@@ -282,6 +296,12 @@ export default function VendorsPage() {
           <Textarea className="sm:col-span-2" label="Notities" value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} />
           <button type="submit" hidden />
         </form>
+        {editing && (
+          <div className="mt-5">
+            <p className="label">Documenten</p>
+            <VendorDocuments vendorId={editing.id} />
+          </div>
+        )}
         {editing?.website && (
           <a href={editing.website} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1 text-sm text-rose-700 hover:underline">
             Website bezoeken <ExternalLink className="size-3.5" aria-hidden />

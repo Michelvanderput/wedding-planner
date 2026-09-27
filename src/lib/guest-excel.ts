@@ -4,7 +4,7 @@ import { INVITED_LABEL, RSVP_LABEL } from "./defaults";
 import type { Guest, InvitedTo, Rsvp, Side, Wedding } from "./types";
 
 /** Velden die via Excel in- en uitgevoerd worden. */
-export type GuestDraft = Pick<Guest, "name" | "email" | "phone" | "side" | "group_name" | "invited_to" | "rsvp" | "plus_one" | "dietary">;
+export type GuestDraft = Pick<Guest, "name" | "email" | "phone" | "side" | "group_name" | "invited_to" | "rsvp" | "plus_one" | "dietary" | "meal">;
 
 export interface ParsedRow {
   row: number; // regelnummer in het bestand
@@ -36,6 +36,7 @@ const COLS = [
   { key: "group_name", header: "Groep", width: 16 },
   { key: "plus_one", header: "+1", width: 8 },
   { key: "dietary", header: "Dieetwensen", width: 28 },
+  { key: "meal", header: "Menukeuze", width: 18 },
   { key: "rsvp", header: "RSVP", width: 20 },
 ] as const;
 
@@ -50,7 +51,12 @@ export async function buildGuestWorkbook(wedding: Wedding, guests: Guest[] = [])
   const sides = sideLabels(wedding);
 
   const ws = wb.addWorksheet(SHEET, { views: [{ state: "frozen", ySplit: 1 }] });
-  ws.columns = COLS.map((c) => ({ header: c.header, key: c.key, width: c.width }));
+  // Eigen RSVP-vragen als extra kolommen (alleen export; bij importeren genegeerd).
+  const questions = (wedding.site?.rsvp_questions ?? []).filter((q) => q.label.trim());
+  ws.columns = [
+    ...COLS.map((c) => ({ header: c.header, key: c.key, width: c.width })),
+    ...questions.map((q) => ({ header: q.label, key: `q_${q.id}`, width: 26 })),
+  ];
 
   const head = ws.getRow(1);
   head.height = 24;
@@ -60,7 +66,7 @@ export async function buildGuestWorkbook(wedding: Wedding, guests: Guest[] = [])
     cell.alignment = { vertical: "middle" };
     cell.border = { bottom: { style: "thin", color: { argb: "FF8F2E50" } } };
   });
-  ws.autoFilter = { from: "A1", to: `${String.fromCharCode(64 + COLS.length)}1` };
+  ws.autoFilter = { from: "A1", to: `${String.fromCharCode(64 + COLS.length + questions.length)}1` };
 
   for (const g of guests) {
     ws.addRow({
@@ -72,7 +78,9 @@ export async function buildGuestWorkbook(wedding: Wedding, guests: Guest[] = [])
       group_name: g.group_name,
       plus_one: g.plus_one ? "Ja" : "Nee",
       dietary: g.dietary,
+      meal: g.meal ?? "",
       rsvp: RSVP_LABEL[g.rsvp],
+      ...Object.fromEntries(questions.map((q) => [`q_${q.id}`, g.answers?.[q.id] ?? ""])),
     });
   }
 
@@ -115,6 +123,7 @@ export async function buildGuestWorkbook(wedding: Wedding, guests: Guest[] = [])
     ["Groep", "Vrij veld, bijv. Familie, Vrienden, Werk, Sportclub."],
     ["+1", "Ja als de gast iemand mag meenemen. Leeg = Nee."],
     ["Dieetwensen", "Bijv. vegetarisch, glutenvrij, notenallergie."],
+    ["Menukeuze", "Optioneel, bijv. Vlees, Vis of Vegetarisch."],
     ["RSVP", `${Object.values(RSVP_LABEL).join(", ")}. Leeg = ${RSVP_LABEL.pending}.`],
     ["", ""],
     ["Uploaden", "Sla het bestand op en kies in de app bij Gasten → Importeren. Je ziet eerst een voorbeeld voordat er iets wordt opgeslagen."],
@@ -161,6 +170,7 @@ const HEADER_ALIASES: Record<ColKey, string[]> = {
   plus_one: ["+1", "plus1", "plusone", "introduce", "partnermee", "metpartner", "aanhang"],
   dietary: ["dieetwensen", "dieet", "allergieen", "allergie", "dietary", "dieetwensenallergieen", "eetwensen"],
   rsvp: ["rsvp", "status", "komt", "aanwezig", "reactie"],
+  meal: ["menukeuze", "menu", "maaltijd", "gerecht", "hoofdgerecht", "meal"],
 };
 
 function mapHeaders(headers: unknown[]): Partial<Record<ColKey, number>> {
@@ -225,6 +235,7 @@ function toRow(
       group_name: get("group_name").slice(0, 80),
       plus_one: YES.includes(norm(get("plus_one"))),
       dietary: get("dietary").slice(0, 500),
+      meal: get("meal").slice(0, 100),
       rsvp,
     },
     errors,
@@ -309,6 +320,8 @@ export async function parseGuestFile(
   rows.slice(headerIdx + 1).forEach((cells, i) => {
     if (!cells.some((c) => String(c).trim())) return; // lege regel
     const { data, errors, warnings } = toRow(cells.map(String), map, wedding);
+    // Geen menukolom in het bestand? Dan de bestaande menukeuze niet overschrijven.
+    if (map.meal === undefined) delete (data as Partial<GuestDraft>).meal;
     const key = norm(data.name);
     if (key && seen.has(key)) errors.push("Staat dubbel in het bestand");
     if (key) seen.add(key);

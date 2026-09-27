@@ -4,9 +4,11 @@ import { motion } from "framer-motion";
 import { AlertCircle, ArrowUpRight, CalendarDays, Check, ListChecks, MapPin, Store, Users, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
+import { AssigneeBadge } from "@/components/dashboard/assignee";
 import { InstallCard } from "@/components/dashboard/install-card";
 import { AiCoach, CountUp, Countdown } from "@/components/dashboard/widgets";
 import { Badge, Bar, ProgressRing, Rise, Stagger } from "@/components/ui/misc";
+import { openPayments } from "@/lib/payments";
 import { haptic } from "@/lib/pwa/haptics";
 import { useWedding } from "@/lib/store";
 import { cn, coupleName, daysUntil, formatDate, formatDateShort, formatEuro } from "@/lib/utils";
@@ -44,6 +46,7 @@ export default function Overview() {
   }, [tasks, guests, budget_items, vendors]);
 
   if (!wedding) return null;
+  const payments = openPayments(budget_items).filter((p) => p.days === null || p.days <= 60);
   const progress = tasks.length ? s.done / tasks.length : 0;
   const budget = wedding.budget_total || s.estimated;
 
@@ -187,6 +190,7 @@ export default function Overview() {
                         <p className="truncate font-medium">{t.title}</p>
                         <p className="text-sm text-ink-500">{t.category}</p>
                       </div>
+                      <AssigneeBadge a={t.assignee} wedding={wedding} />
                       {t.due_date && (
                         <Badge tone={overdue ? "rose" : d !== null && d <= 14 ? "gold" : "ink"}>
                           {overdue && <AlertCircle className="size-3" aria-hidden />}
@@ -263,6 +267,21 @@ export default function Overview() {
                 </li>
               ))}
             </ul>
+            {payments.length > 0 && (
+              <div className="mt-6 border-t border-line pt-4">
+                <p className="text-sm font-medium text-ink-900">Eerstvolgende betalingen</p>
+                <ul className="mt-2 space-y-1.5">
+                  {payments.slice(0, 3).map((p) => (
+                    <li key={p.id} className="flex items-center gap-2 text-sm">
+                      <span className={cn("size-2 shrink-0 rounded-full", p.days !== null && p.days < 0 ? "bg-rose-500" : p.days !== null && p.days <= 14 ? "bg-gold-500" : "bg-ink-300")} aria-hidden />
+                      <span className="min-w-0 flex-1 truncate text-ink-700">{p.label}</span>
+                      <span className="shrink-0 text-ink-500">{p.date ? formatDateShort(p.date) : "—"}</span>
+                      <span className="stat w-20 shrink-0 text-right">{formatEuro(p.amount)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
         </Rise>
 

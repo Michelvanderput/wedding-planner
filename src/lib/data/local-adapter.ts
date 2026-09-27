@@ -1,4 +1,4 @@
-import { COLLECTION_KEYS, emptyCollections, withWeddingDefaults, type Collections, type Wedding } from "../types";
+import { COLLECTION_KEYS, emptyCollections, withRowDefaults, withWeddingDefaults, type Collections, type Wedding } from "../types";
 import type { DataAdapter } from "./adapter";
 
 const KEY = "bruiloftsplanner:v1";
@@ -24,7 +24,7 @@ function read(): Snapshot {
     if (raw) {
       const parsed = JSON.parse(raw) as Snapshot;
       const collections = { ...emptyCollections(), ...parsed.collections };
-      collections.timeline_events = collections.timeline_events.map((e) => ({ ...e, audience: e.audience ?? "all" }));
+      for (const k of COLLECTION_KEYS) (collections[k] as unknown[]) = (collections[k] ?? []).map((r) => withRowDefaults(k, r));
       return { wedding: parsed.wedding ? withWeddingDefaults(parsed.wedding) : null, collections };
     }
   } catch {
@@ -78,6 +78,7 @@ export function createLocalAdapter(): DataAdapter {
         if (key === "seating_tables") {
           s.collections.guests = s.collections.guests.map((g) => (g.table_id === id ? { ...g, table_id: null } : g));
         }
+        if (key === "gifts") s.collections.gift_claims = s.collections.gift_claims.filter((c) => c.gift_id !== id);
         if (key === "vendors") {
           s.collections.budget_items = s.collections.budget_items.map((b) =>
             b.vendor_id === id ? { ...b, vendor_id: null } : b,

@@ -4,11 +4,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Copy, Download, ExternalLink, FileSpreadsheet, Link2, Mail, Send, Pencil, Plus, Search, Sparkles, Trash2, UserPlus, Users, Utensils } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { GuestImportModal } from "@/components/dashboard/guest-import";
+import { GuestReminders } from "@/components/dashboard/guest-reminders";
+import Link from "next/link";
+import { BellRing, QrCode as QrIcon } from "lucide-react";
 import { Fab } from "@/components/ui/fab";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea, Toggle } from "@/components/ui/field";
 import { Badge, EmptyState, PageHeader } from "@/components/ui/misc";
 import { Modal } from "@/components/ui/modal";
+import { QrCode } from "@/components/ui/qr";
 import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/ui/toast";
 import { aiText, useAiEnabled } from "@/lib/ai";
@@ -17,7 +21,7 @@ import { INVITED_LABEL, RSVP_LABEL } from "@/lib/defaults";
 import { useWedding } from "@/lib/store";
 import { SITE_URL } from "@/lib/supabase/config";
 import type { Guest, InvitedTo, Rsvp, Side } from "@/lib/types";
-import { cn, coupleName, formatDate, initials, nowIso, uid } from "@/lib/utils";
+import { cn, coupleName, formatDate, initials, nowIso, slugify, uid } from "@/lib/utils";
 
 type Draft = Omit<Guest, "id" | "wedding_id" | "created_at" | "rsvp_token" | "table_id">;
 const blank = (): Draft => ({
@@ -30,6 +34,8 @@ const blank = (): Draft => ({
   rsvp: "pending",
   plus_one: false,
   dietary: "",
+  meal: "",
+  answers: {},
 });
 
 const RSVP_TONE: Record<Rsvp, "sage" | "gold" | "rose"> = { attending: "sage", pending: "gold", declined: "rose" };
@@ -44,6 +50,7 @@ export default function GuestsPage() {
   const [open, setOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [remindOpen, setRemindOpen] = useState(false);
   const [bulk, setBulk] = useState("");
   const [bulkInvited, setBulkInvited] = useState<InvitedTo>("day");
   const [editing, setEditing] = useState<Guest | null>(null);
@@ -77,6 +84,18 @@ export default function GuestsPage() {
       dietary: guests.filter((g) => g.dietary.trim()).length,
     };
   }, [guests]);
+
+  const meals = wedding?.site.rsvp_meals ?? [];
+  const questions = wedding?.site.rsvp_questions ?? [];
+  const mealCounts = useMemo(() => {
+    if (!meals.length) return [] as [string, number][];
+    const m = new Map<string, number>();
+    for (const g of guests.filter((x) => x.rsvp === "attending")) {
+      const k = g.meal || "Nog niet gekozen";
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return [...m.entries()].sort((a, b) => (a[0] === "Nog niet gekozen" ? 1 : b[0] === "Nog niet gekozen" ? -1 : b[1] - a[1]));
+  }, [guests, meals.length]);
 
   const list = useMemo(() => {
     const q = query.toLowerCase();
@@ -181,6 +200,11 @@ export default function GuestsPage() {
                 <Sparkles className="size-4 text-gold-600" aria-hidden /> Uitnodigingstekst
               </Button>
             )}
+            {mode === "supabase" && stats.pending > 0 && (
+              <Button variant="secondary" onClick={() => setRemindOpen(true)}>
+                <BellRing className="size-4 text-gold-600" aria-hidden /> Herinnering ({stats.pending})
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => setImportOpen(true)}>
               <FileSpreadsheet className="size-4 text-sage-600" aria-hidden /> Excel import
             </Button>
@@ -203,6 +227,19 @@ export default function GuestsPage() {
           </motion.div>
         ))}
       </div>
+
+      {mealCounts.length > 0 && (
+        <div className="card mb-4 flex flex-wrap items-center gap-2 p-4">
+          <span className="mr-1 inline-flex items-center gap-1.5 text-sm font-medium text-ink-900">
+            <Utensils className="size-4 text-gold-600" aria-hidden /> Menu (komt):
+          </span>
+          {mealCounts.map(([m, n]) => (
+            <Badge key={m} tone={m === "Nog niet gekozen" ? "ink" : "gold"}>
+              {m} · {n}
+            </Badge>
+          ))}
+        </div>
+      )}
 
       <div className="card mb-4 flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
         <div className="relative flex-1">
@@ -233,9 +270,16 @@ export default function GuestsPage() {
             ]}
           />
           {guests.length > 0 && (
+            <>
             <Button variant="ghost" size="sm" onClick={exportExcel} className="h-11">
               <Download className="size-4" aria-hidden /> Excel
             </Button>
+            {mode === "supabase" && (
+              <Link href="/dashboard/gasten/qr" className="inline-flex h-11 items-center gap-2 rounded-full px-3.5 text-sm font-medium text-ink-700 hover:bg-rose-50 hover:text-rose-700">
+                <QrIcon className="size-4" aria-hidden /> QR-kaartjes
+              </Link>
+            )}
+            </>
           )}
         </div>
       </div>
@@ -291,6 +335,12 @@ export default function GuestsPage() {
                     <Pencil className="size-4" />
                   </button>
                 </div>
+                {(g.meal || Object.keys(g.answers ?? {}).length > 0) && (
+                  <p className="flex flex-wrap gap-1.5 text-sm">
+                    {g.meal && <Badge tone="gold">{g.meal}</Badge>}
+                    {Object.keys(g.answers ?? {}).length > 0 && <Badge tone="ink">{Object.keys(g.answers).length} antwoord{Object.keys(g.answers).length > 1 ? "en" : ""}</Badge>}
+                  </p>
+                )}
                 {g.dietary && (
                   <p className="flex items-center gap-1.5 text-sm text-ink-700">
                     <Utensils className="size-3.5 text-gold-600" aria-hidden /> {g.dietary}
@@ -356,6 +406,28 @@ export default function GuestsPage() {
           <Select label="Kant" value={draft.side} onChange={(e) => setDraft({ ...draft, side: e.target.value as Side })} options={(Object.keys(sideLabel) as Side[]).map((s) => ({ value: s, label: sideLabel[s] }))} />
           <Input label="Groep" placeholder="Familie, vrienden, werk…" value={draft.group_name} onChange={(e) => setDraft({ ...draft, group_name: e.target.value })} />
           <Input className="sm:col-span-2" label="Dieetwensen / allergieën" value={draft.dietary} onChange={(e) => setDraft({ ...draft, dietary: e.target.value })} />
+          {(meals.length > 0 || draft.meal) && (
+            <Select
+              className="sm:col-span-2"
+              label="Menukeuze"
+              value={draft.meal}
+              onChange={(e) => setDraft({ ...draft, meal: e.target.value })}
+              options={[{ value: "", label: "Nog niet gekozen" }, ...[...new Set([...meals, ...(draft.meal ? [draft.meal] : [])])].map((m) => ({ value: m, label: m }))]}
+            />
+          )}
+          {questions.length > 0 && (
+            <div className="rounded-2xl bg-ivory p-4 sm:col-span-2">
+              <p className="text-sm font-medium text-ink-900">Antwoorden op jullie vragen</p>
+              <dl className="mt-2 space-y-2 text-sm">
+                {questions.map((q) => (
+                  <div key={q.id}>
+                    <dt className="text-ink-500">{q.label}</dt>
+                    <dd className="text-ink-900">{draft.answers?.[q.id] || <span className="text-ink-300">Nog geen antwoord</span>}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
           <div className="sm:col-span-2">
             <Toggle checked={draft.plus_one} onChange={(v) => setDraft({ ...draft, plus_one: v })} label="Neemt iemand mee (+1)" />
           </div>
@@ -386,11 +458,15 @@ export default function GuestsPage() {
                 <ExternalLink className="size-4" aria-hidden /> Bekijk
               </a>
             </div>
+            <div className="mt-4 flex justify-center">
+              <QrCode value={rsvpLink(editing)} size={140} filename={`uitnodiging-${slugify(editing.name) || "gast"}.png`} />
+            </div>
           </div>
         )}
       </Modal>
 
       <GuestImportModal open={importOpen} onClose={() => setImportOpen(false)} />
+      {wedding && mode === "supabase" && <GuestReminders open={remindOpen} onClose={() => setRemindOpen(false)} guests={guests} wedding={wedding} linkFor={rsvpLink} />}
 
       {/* Snel toevoegen */}
       <Modal

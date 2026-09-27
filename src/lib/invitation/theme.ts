@@ -9,7 +9,7 @@ export type CornerId = "round" | "soft" | "sharp";
 export type DividerId = "diamond" | "heart" | "flower" | "dots" | "line";
 export type EmblemId = "rings" | "monogram" | "heart" | "none";
 export type MotionId = "rich" | "subtle" | "none";
-export type SectionId = "welkom" | "programma" | "locatie" | "praktisch" | "vragen" | "rsvp" | "contact";
+export type SectionId = "welkom" | "programma" | "locatie" | "praktisch" | "vragen" | "rsvp" | "cadeaus" | "gastenboek" | "contact";
 
 export interface InvitationTheme {
   preset: string;
@@ -40,9 +40,11 @@ export const SECTION_LABEL: Record<SectionId, string> = {
   praktisch: "Praktische info",
   vragen: "Veelgestelde vragen",
   rsvp: "RSVP",
+  cadeaus: "Cadeaulijst",
+  gastenboek: "Gastenboek",
   contact: "Contact ceremoniemeester",
 };
-export const DEFAULT_SECTIONS: SectionId[] = ["welkom", "programma", "locatie", "praktisch", "vragen", "rsvp", "contact"];
+export const DEFAULT_SECTIONS: SectionId[] = ["welkom", "programma", "locatie", "praktisch", "vragen", "rsvp", "cadeaus", "gastenboek", "contact"];
 
 // ── Lettertypecombinaties ──────────────────────────────────────────────
 export interface FontPairing {

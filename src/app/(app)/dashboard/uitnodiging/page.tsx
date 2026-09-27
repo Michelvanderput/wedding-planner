@@ -1,13 +1,15 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Copy, ExternalLink, Eye, Globe, ImageIcon, Link2, Plus, Sparkles, Trash2, Users, X } from "lucide-react";
+import { Check, Copy, ExternalLink, Eye, EyeOff, Globe, ImageIcon, Link2, Plus, Sparkles, Trash2, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { InvitationView } from "@/components/invitation/invitation-view";
+import { RsvpSettings } from "@/components/invitation/rsvp-settings";
 import { ThemeEditor } from "@/components/invitation/theme-editor";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { QrCode } from "@/components/ui/qr";
 import { Segmented } from "@/components/ui/segmented";
 import { buildPreviewData, storeDraft, type PreviewAs } from "@/lib/invitation/preview";
 import { resolveTheme, type InvitationTheme } from "@/lib/invitation/theme";
@@ -23,7 +25,7 @@ import { cn, coupleName, formatDate, slugify } from "@/lib/utils";
 
 
 export default function InvitationEditor() {
-  const { wedding, updateWedding, inspirations, guests, mode, timeline_events } = useWedding();
+  const { wedding, updateWedding, inspirations, guests, mode, timeline_events, gifts, gift_claims, guestbook, update: updateRow, remove } = useWedding();
   const toast = useToast();
   const ai = useAiEnabled();
   const [site, setSite] = useState<SiteContent | null>(wedding?.site ?? null);
@@ -113,7 +115,12 @@ export default function InvitationEditor() {
       }
       // 2. Inhoud opslaan (publiceren alleen als de link in orde is).
       const publish = extra?.published === true && !slugOk ? {} : extra;
-      const next = { ...site, ...publish, faq: site.faq.filter((f) => f.q.trim() || f.a.trim()) };
+      const next = {
+        ...site,
+        ...publish,
+        faq: site.faq.filter((f) => f.q.trim() || f.a.trim()),
+        rsvp_questions: site.rsvp_questions.filter((q) => q.label.trim()),
+      };
       setSite(next);
       const siteOk = await updateWedding({ site: next });
       if (siteOk && slugOk) {
@@ -176,7 +183,7 @@ export default function InvitationEditor() {
 
   const images = inspirations.filter((i) => i.image_url);
   const theme = resolveTheme(site.theme);
-  const previewData = buildPreviewData(wedding, timeline_events, site, previewAs);
+  const previewData = buildPreviewData(wedding, timeline_events, site, previewAs, { gifts, claims: gift_claims, guestbook });
 
   /** Voorbeeld openen mét nog niet opgeslagen wijzigingen. */
   function openPreview() {
@@ -392,6 +399,47 @@ export default function InvitationEditor() {
             </div>
           </section>
 
+          <RsvpSettings
+            meals={site.rsvp_meals}
+            questions={site.rsvp_questions}
+            onMeals={(m) => set("rsvp_meals", m)}
+            onQuestions={(q) => set("rsvp_questions", q)}
+          />
+
+          {/* Gastenboek-moderatie */}
+          {guestbook.length > 0 && (
+            <section className="card p-6">
+              <h2 className="text-2xl font-semibold">Gastenboek</h2>
+              <p className="mt-1 text-sm text-ink-500">{guestbook.length} berichten van gasten. Verborgen berichten zien gasten niet.</p>
+              <ul className="mt-4 space-y-2">
+                {[...guestbook]
+                  .sort((x, y) => y.created_at.localeCompare(x.created_at))
+                  .map((e) => (
+                    <li key={e.id} className={cn("flex items-start gap-3 rounded-2xl border p-3", e.hidden ? "border-dashed border-line bg-ivory/60" : "border-line bg-white")}>
+                      <div className="min-w-0 flex-1">
+                        <p className={cn("text-sm whitespace-pre-line [overflow-wrap:anywhere]", e.hidden ? "text-ink-500" : "text-ink-900")}>{e.message}</p>
+                        <p className="mt-1 text-xs text-ink-500">— {e.name}</p>
+                      </div>
+                      <button
+                        onClick={() => updateRow("guestbook", e.id, { hidden: !e.hidden })}
+                        className="grid size-9 shrink-0 place-items-center rounded-full text-ink-500 hover:bg-rose-50 hover:text-rose-700"
+                        aria-label={e.hidden ? "Bericht tonen" : "Bericht verbergen"}
+                      >
+                        {e.hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                      <button
+                        onClick={() => remove("guestbook", e.id)}
+                        className="grid size-9 shrink-0 place-items-center rounded-full text-ink-500 hover:bg-rose-50 hover:text-rose-700"
+                        aria-label="Bericht verwijderen"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            </section>
+          )}
+
           {/* Afbeelding */}
           <section className="card p-6">
             <h2 className="text-2xl font-semibold">Openingsfoto</h2>
@@ -507,6 +555,12 @@ export default function InvitationEditor() {
                     >
                       <ExternalLink className="size-4" aria-hidden /> Open
                     </a>
+                  </div>
+                )}
+                {site.published && wedding.public_slug && (
+                  <div className="mt-4 flex flex-col items-center rounded-2xl bg-ivory p-3 text-center">
+                    <QrCode value={`${origin}/uitnodiging/${wedding.public_slug}`} size={140} filename="uitnodiging-qr.png" />
+                    <p className="mt-1 text-xs text-ink-500">Zet deze QR-code op je trouwkaart of save-the-date.</p>
                   </div>
                 )}
                 {dirty && slugValid && slug !== wedding.public_slug && (

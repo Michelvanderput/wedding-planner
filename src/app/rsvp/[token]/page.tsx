@@ -31,5 +31,13 @@ export default async function PersonalInvitationPage({ params }: Props) {
       />
     );
   }
-  return <InvitationView data={data} rsvp={<RsvpForm token={token} guest={data.guest} couple={`${data.partner_one} & ${data.partner_two}`} />} />;
+  return <InvitationView data={data} token={token} rsvp={
+        <RsvpForm
+          token={token}
+          guest={data.guest}
+          couple={`${data.partner_one} & ${data.partner_two}`}
+          meals={data.site.rsvp_meals}
+          questions={data.site.rsvp_questions}
+        />
+      } />;
 }

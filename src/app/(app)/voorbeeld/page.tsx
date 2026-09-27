@@ -12,7 +12,7 @@ import type { InvitationData, SiteContent } from "@/lib/types";
 
 /** Voorbeeld van de uitnodiging, opgebouwd uit de eigen (nog niet opgeslagen) gegevens. */
 export default function PreviewPage() {
-  const { wedding, timeline_events, status } = useWedding();
+  const { wedding, timeline_events, status, gifts, gift_claims, guestbook } = useWedding();
   const [as, setAs] = useState<As>("day");
 
   useEffect(() => {
@@ -27,8 +27,8 @@ export default function PreviewPage() {
   }, [wedding]);
 
   const data = useMemo<InvitationData | null>(
-    () => (wedding ? buildPreviewData(wedding, timeline_events, draft ?? wedding.site, as) : null),
-    [wedding, timeline_events, draft, as],
+    () => (wedding ? buildPreviewData(wedding, timeline_events, draft ?? wedding.site, as, { gifts, claims: gift_claims, guestbook }) : null),
+    [wedding, timeline_events, draft, as, gifts, gift_claims, guestbook],
   );
 
   if (status !== "ready" || !data) return <Spinner label="Voorbeeld laden…" />;

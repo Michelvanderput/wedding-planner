@@ -1,22 +1,23 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, CheckCircle2, Circle, Pencil, Plus, Trash2, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Circle, Pencil, Plus, Trash2, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CountUp } from "@/components/dashboard/widgets";
 import { Fab } from "@/components/ui/fab";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Toggle } from "@/components/ui/field";
-import { EmptyState, PageHeader, ProgressRing } from "@/components/ui/misc";
+import { Badge, EmptyState, PageHeader, ProgressRing } from "@/components/ui/misc";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { BUDGET_CATEGORIES } from "@/lib/defaults";
 import { useWedding } from "@/lib/store";
 import type { BudgetItem } from "@/lib/types";
-import { cn, formatEuro, nowIso, uid } from "@/lib/utils";
+import { openPayments } from "@/lib/payments";
+import { cn, daysUntil, formatDate, formatDateShort, formatEuro, nowIso, uid } from "@/lib/utils";
 
 type Draft = Omit<BudgetItem, "id" | "wedding_id" | "created_at">;
-const blank = (): Draft => ({ category: "Overig", name: "", estimated: 0, actual: 0, paid: false, vendor_id: null });
+const blank = (): Draft => ({ category: "Overig", name: "", estimated: 0, actual: 0, paid: false, vendor_id: null, due_date: null, deposit: 0, deposit_paid: false });
 
 export default function BudgetPage() {
   const { wedding, budget_items, vendors, add, update, remove, updateWedding } = useWedding();
@@ -49,6 +50,8 @@ export default function BudgetPage() {
   const remaining = budget - t.actual;
   const overPlanned = t.estimated > budget;
   const maxCat = Math.max(1, ...t.grouped.map((g) => Math.max(g.est, g.act)));
+  const payments = openPayments(budget_items);
+  const overCats = t.grouped.filter((g) => g.est > 0 && g.act > g.est);
 
   function openNew(category?: string) {
     setEditing(null);
@@ -57,7 +60,7 @@ export default function BudgetPage() {
   }
   function openEdit(b: BudgetItem) {
     setEditing(b);
-    setDraft({ category: b.category, name: b.name, estimated: b.estimated, actual: b.actual, paid: b.paid, vendor_id: b.vendor_id });
+    setDraft({ category: b.category, name: b.name, estimated: b.estimated, actual: b.actual, paid: b.paid, vendor_id: b.vendor_id, due_date: b.due_date, deposit: b.deposit, deposit_paid: b.deposit_paid });
     setOpen(true);
   }
   function save() {
@@ -122,6 +125,55 @@ export default function BudgetPage() {
           ))}
         </div>
       </div>
+
+      {/* Aankomende betalingen + overschrijdingen */}
+      {(payments.length > 0 || overCats.length > 0) && (
+        <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {payments.length > 0 && (
+            <section className="card p-6">
+              <h2 className="flex items-center gap-2 text-2xl font-semibold">
+                <CalendarClock className="size-5 text-rose-600" aria-hidden /> Nog te betalen
+              </h2>
+              <p className="text-sm text-ink-500">{formatEuro(payments.reduce((a, p) => a + p.amount, 0))} in totaal</p>
+              <ul className="mt-4 divide-y divide-line">
+                {payments.slice(0, 6).map((p) => (
+                  <li key={p.id} className="flex items-center gap-3 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{p.label}</p>
+                      <p className={cn("text-sm", p.days !== null && p.days < 0 ? "font-medium text-rose-700" : "text-ink-500")}>
+                        {p.date ? (p.days !== null && p.days < 0 ? `${-p.days} dagen te laat` : p.days === 0 ? "Vandaag" : `Vóór ${formatDate(p.date)}`) : "Geen datum"}
+                      </p>
+                    </div>
+                    <span className="stat text-base">{formatEuro(p.amount)}</span>
+                    <button
+                      onClick={() => update("budget_items", p.itemId, p.kind === "deposit" ? { deposit_paid: true } : { paid: true })}
+                      className="min-h-9 rounded-full border border-line bg-white px-3 text-xs font-medium text-ink-700 hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700"
+                    >
+                      Betaald
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {overCats.length > 0 && (
+            <section className="card border-rose-200 p-6">
+              <h2 className="flex items-center gap-2 text-2xl font-semibold text-rose-800">
+                <AlertTriangle className="size-5" aria-hidden /> Boven budget
+              </h2>
+              <ul className="mt-4 space-y-2">
+                {overCats.map((g) => (
+                  <li key={g.cat} className="flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2 text-sm">
+                    <span className="text-ink-900">{g.cat}</span>
+                    <span className="stat text-rose-700">+{formatEuro(g.act - g.est)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-ink-500">Tip: schuif budget tussen categorieën door een geplande post te verlagen.</p>
+            </section>
+          )}
+        </div>
+      )}
 
       {/* Verdeling */}
       {t.grouped.length > 0 && (
@@ -191,9 +243,17 @@ export default function BudgetPage() {
                         </button>
                         <button onClick={() => openEdit(b)} className="min-w-0 flex-1 text-left">
                           <p className="truncate font-medium">{b.name}</p>
-                          <p className="text-sm text-ink-500">
-                            {vendor ? vendor.name : "Geen leverancier"}
-                            {b.paid && " · betaald"}
+                          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-500">
+                            <span>{vendor ? vendor.name : "Geen leverancier"}</span>
+                            {b.paid ? (
+                              <Badge tone="sage">Betaald</Badge>
+                            ) : b.due_date ? (
+                              <Badge tone={(daysUntil(b.due_date) ?? 99) < 0 ? "rose" : (daysUntil(b.due_date) ?? 99) <= 30 ? "gold" : "ink"}>
+                                {(daysUntil(b.due_date) ?? 0) < 0 ? "Te laat · " : "Vóór "}
+                                {formatDateShort(b.due_date)}
+                              </Badge>
+                            ) : null}
+                            {b.deposit > 0 && !b.paid && <Badge tone={b.deposit_paid ? "sage" : "gold"}>Aanbetaling {formatEuro(b.deposit)}{b.deposit_paid ? " ✓" : ""}</Badge>}
                           </p>
                         </button>
                         <div className="text-right text-sm tabular-nums">
@@ -237,8 +297,11 @@ export default function BudgetPage() {
           />
           <Input label="Gepland (€)" type="number" inputMode="decimal" min={0} step="1" value={draft.estimated || ""} onChange={(e) => setDraft({ ...draft, estimated: Number(e.target.value) })} />
           <Input label="Werkelijk (€)" type="number" inputMode="decimal" min={0} step="1" value={draft.actual || ""} onChange={(e) => setDraft({ ...draft, actual: Number(e.target.value) })} />
-          <div className="sm:col-span-2">
-            <Toggle checked={draft.paid} onChange={(v) => setDraft({ ...draft, paid: v })} label="Al betaald" />
+          <Input label="Betalen vóór" type="date" value={draft.due_date ?? ""} onChange={(e) => setDraft({ ...draft, due_date: e.target.value || null })} hint="Je krijgt een herinnering op het overzicht." />
+          <Input label="Aanbetaling (€)" type="number" inputMode="decimal" min={0} step="1" value={draft.deposit || ""} onChange={(e) => setDraft({ ...draft, deposit: Number(e.target.value) })} />
+          <div className="grid gap-1 sm:col-span-2 sm:grid-cols-2">
+            <Toggle checked={draft.deposit_paid} onChange={(v) => setDraft({ ...draft, deposit_paid: v })} label="Aanbetaling voldaan" />
+            <Toggle checked={draft.paid} onChange={(v) => setDraft({ ...draft, paid: v })} label="Volledig betaald" />
           </div>
           <button type="submit" hidden />
         </form>

@@ -10,7 +10,15 @@ const normalize = (d: InvitationData): InvitationData => ({
   ...d,
   color_palette: d.color_palette ?? [],
   timeline: d.timeline ?? [],
-  site: { ...defaultSite(), ...(d.site ?? {}), faq: Array.isArray(d.site?.faq) ? d.site.faq : [] },
+  site: {
+    ...defaultSite(),
+    ...(d.site ?? {}),
+    faq: Array.isArray(d.site?.faq) ? d.site.faq : [],
+    rsvp_meals: Array.isArray(d.site?.rsvp_meals) ? d.site.rsvp_meals : [],
+    rsvp_questions: Array.isArray(d.site?.rsvp_questions) ? d.site.rsvp_questions : [],
+  },
+  gifts: d.gifts ?? [],
+  guestbook: d.guestbook ?? [],
 });
 
 /** Persoonlijke uitnodiging op basis van de RSVP-token van een gast. */

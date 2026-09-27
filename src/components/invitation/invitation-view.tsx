@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Petals, Sprig } from "@/components/decor/petals";
+import { GiftSection, GuestbookSection } from "@/components/invitation/extras";
 import { invitationFontVars } from "@/lib/invitation/fonts";
 import { resolveTheme, themeStyle, type InvitationTheme, type SectionId } from "@/lib/invitation/theme";
 import type { InvitationData } from "@/lib/types";
@@ -260,9 +261,11 @@ interface Props {
   embedded?: boolean;
   /** Thema om te tonen i.p.v. het opgeslagen thema (live voorbeeld). */
   themeOverride?: InvitationTheme;
+  /** Persoonlijke token: maakt reserveren en het gastenboek mogelijk. */
+  token?: string;
 }
 
-export function InvitationView({ data, rsvp, banner, embedded, themeOverride }: Props) {
+export function InvitationView({ data, rsvp, banner, embedded, themeOverride, token }: Props) {
   const { site, guest } = data;
   const theme = themeOverride ?? resolveTheme(site.theme);
   const couple = `${data.partner_one} & ${data.partner_two}`;
@@ -284,10 +287,12 @@ export function InvitationView({ data, rsvp, banner, embedded, themeOverride }: 
     praktisch: practical.length > 0,
     vragen: faq.length > 0,
     rsvp: !!rsvp,
+    cadeaus: (data.gifts?.length ?? 0) > 0,
+    gastenboek: !!token || (data.guestbook?.length ?? 0) > 0,
     contact: !!(site.contact_name || site.contact_phone),
   };
   const order = theme.sections.filter((s) => has[s] && (s === "rsvp" || !theme.hidden.includes(s)));
-  const NAV_LABEL: Partial<Record<SectionId, string>> = { welkom: "Welkom", programma: "Programma", locatie: "Locatie", praktisch: "Praktisch", vragen: "Vragen", rsvp: "RSVP" };
+  const NAV_LABEL: Partial<Record<SectionId, string>> = { welkom: "Welkom", programma: "Programma", locatie: "Locatie", praktisch: "Praktisch", vragen: "Vragen", rsvp: "RSVP", cadeaus: "Cadeaus", gastenboek: "Gastenboek" };
   const nav = order.filter((s) => NAV_LABEL[s]).map((s) => [s, NAV_LABEL[s]!] as const);
 
   const [scrolled, setScrolled] = useState(false);
@@ -491,6 +496,16 @@ export function InvitationView({ data, rsvp, banner, embedded, themeOverride }: 
           </p>
         )}
         {rsvp}
+      </Section>
+    ),
+    cadeaus: (
+      <Section key="cadeaus" id="cadeaus" eyebrow="Cadeautips" title="Onze wensenlijst" divider={theme.divider}>
+        <GiftSection gifts={data.gifts ?? []} token={embedded ? undefined : token} />
+      </Section>
+    ),
+    gastenboek: (
+      <Section key="gastenboek" id="gastenboek" eyebrow="Lieve woorden" title="Gastenboek" divider={theme.divider}>
+        <GuestbookSection entries={data.guestbook ?? []} token={embedded ? undefined : token} guestName={guest?.name} />
       </Section>
     ),
     contact: (

@@ -147,6 +147,7 @@ export function buildChecklist(wedding: Pick<Wedding, "id" | "wedding_date">): T
       done: false,
       priority: t.priority ?? "medium",
       notes: "",
+      assignee: "",
     };
   });
 }
@@ -162,6 +163,9 @@ export function buildBudget(wedding: Pick<Wedding, "id" | "budget_total">): Budg
     actual: 0,
     paid: false,
     vendor_id: null,
+    due_date: null,
+    deposit: 0,
+    deposit_paid: false,
   }));
 }
 
@@ -225,6 +229,8 @@ export function buildDemo(wedding: Wedding): Partial<Collections> {
     dietary: "",
     table_id: null,
     rsvp_token: uid(),
+    meal: "",
+    answers: {},
     ...extra,
   });
   const guests: Guest[] = [

@@ -83,6 +83,8 @@ export function GuestImportModal({ open, onClose }: { open: boolean; onClose: ()
       created_at: now,
       rsvp_token: uid(),
       table_id: null,
+      meal: r.data.meal ?? "",
+      answers: {},
     }));
     if (newGuests.length) add("guests", newGuests);
     toUpdate.forEach((r) => update("guests", r.matchId!, r.data));

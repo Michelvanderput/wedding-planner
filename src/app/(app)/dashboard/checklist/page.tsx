@@ -14,7 +14,8 @@ import { aiText, useAiEnabled } from "@/lib/ai";
 import { PRIORITY_LABEL, TASK_CATEGORIES } from "@/lib/defaults";
 import { haptic } from "@/lib/pwa/haptics";
 import { useWedding } from "@/lib/store";
-import type { Priority, Task } from "@/lib/types";
+import type { Assignee, Priority, Task } from "@/lib/types";
+import { AssigneeBadge, assigneeLabel, assigneeOptions } from "@/components/dashboard/assignee";
 import { addMonths, cn, coupleName, daysUntil, formatDate, formatDateShort, nowIso, parseDate, toDateInput, uid } from "@/lib/utils";
 
 type Filter = "open" | "done" | "all";
@@ -27,6 +28,7 @@ const blank = (): Omit<Task, "id" | "wedding_id" | "created_at"> => ({
   done: false,
   priority: "medium",
   notes: "",
+  assignee: "",
 });
 
 function bucket(t: Task) {
@@ -52,6 +54,7 @@ export default function ChecklistPage() {
   const toast = useToast();
   const ai = useAiEnabled();
   const [filter, setFilter] = useState<Filter>("open");
+  const [who, setWho] = useState<"all" | Assignee>("all");
   const [group, setGroup] = useState<Group>("time");
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Task | null>(null);
@@ -68,6 +71,8 @@ export default function ChecklistPage() {
     const list = tasks
       .filter((t) => (filter === "all" ? true : filter === "done" ? t.done : !t.done))
       .filter((t) => !q || t.title.toLowerCase().includes(q) || t.category.toLowerCase().includes(q))
+      // Iemands taken = aan die persoon toegewezen óf samen
+      .filter((t) => who === "all" || t.assignee === who || (who !== "" && who !== "ceremoniemeester" && t.assignee === "both"))
       .sort((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999"));
     const map = new Map<string, Task[]>();
     for (const t of list) {
@@ -76,7 +81,7 @@ export default function ChecklistPage() {
     }
     const order = group === "time" ? [...BUCKETS, "Afgerond"] : [...map.keys()].sort();
     return order.filter((k) => map.has(k)).map((k) => [k, map.get(k)!] as const);
-  }, [tasks, filter, group, query]);
+  }, [tasks, filter, group, query, who]);
 
   function openNew() {
     setEditing(null);
@@ -85,7 +90,7 @@ export default function ChecklistPage() {
   }
   function openEdit(t: Task) {
     setEditing(t);
-    setDraft({ title: t.title, category: t.category, due_date: t.due_date, done: t.done, priority: t.priority, notes: t.notes });
+    setDraft({ title: t.title, category: t.category, due_date: t.due_date, done: t.done, priority: t.priority, notes: t.notes, assignee: t.assignee ?? "" });
     setOpen(true);
   }
   function save() {
@@ -151,6 +156,7 @@ export default function ChecklistPage() {
           done: false,
           priority: (["low", "medium", "high"] as const).includes(s.priority) ? s.priority : "medium",
           notes: "",
+          assignee: "" as const,
         };
       });
     if (rows.length) add("tasks", rows);
@@ -180,7 +186,7 @@ export default function ChecklistPage() {
 
       <div className="card mb-6 p-4 sm:p-5">
         <Bar value={tasks.length ? done / tasks.length : 0} label="Voortgang takenlijst" />
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-ink-500" aria-hidden />
             <label htmlFor="task-search" className="sr-only">Zoek taken</label>
@@ -196,6 +202,15 @@ export default function ChecklistPage() {
             ]}
             id="filter"
           />
+          <label htmlFor="who" className="sr-only">Wie</label>
+          <select id="who" value={who} onChange={(e) => setWho(e.target.value as "all" | Assignee)} className="field h-11 py-0 sm:w-44">
+            <option value="all">Iedereen</option>
+            {assigneeOptions(wedding).map((o) => (
+              <option key={o.value || "none"} value={o.value}>
+                {o.value === "" ? "Niet toegewezen" : o.value === "both" ? "Samen" : `Taken van ${o.label}`}
+              </option>
+            ))}
+          </select>
           <Segmented
             value={group}
             onChange={setGroup}
@@ -253,6 +268,7 @@ export default function ChecklistPage() {
                         <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-ink-500">
                           {group === "time" && <span>{t.category}</span>}
                           {t.priority === "high" && !t.done && <Badge tone="rose">Belangrijk</Badge>}
+                          {t.assignee && <span className="inline-flex items-center gap-1"><AssigneeBadge a={t.assignee} wedding={wedding} />{assigneeLabel(t.assignee, wedding)}</span>}
                           {t.notes && <span className="truncate">· {t.notes}</span>}
                         </p>
                       </button>
@@ -313,6 +329,7 @@ export default function ChecklistPage() {
             onChange={(e) => setDraft({ ...draft, priority: e.target.value as Priority })}
             options={(Object.keys(PRIORITY_LABEL) as Priority[]).map((p) => ({ value: p, label: PRIORITY_LABEL[p] }))}
           />
+          <Select label="Wie pakt het op?" value={draft.assignee} onChange={(e) => setDraft({ ...draft, assignee: e.target.value as Assignee })} options={assigneeOptions(wedding)} />
           <Textarea className="sm:col-span-2" label="Notities" value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} />
           <button type="submit" hidden />
         </form>

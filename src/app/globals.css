@@ -188,6 +188,11 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+  /* QR-code-svg vult zijn kader */
+  [role="img"] > svg {
+    width: 100%;
+    height: 100%;
+  }
   .pt-safe {
     padding-top: env(safe-area-inset-top);
   }

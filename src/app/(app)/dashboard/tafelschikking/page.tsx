@@ -1,7 +1,7 @@
 "use client";
 
 import { LayoutGroup, motion } from "framer-motion";
-import { Armchair, GripVertical, Pencil, Plus, Trash2, UserMinus, Users } from "lucide-react";
+import { Armchair, GripVertical, Printer, Pencil, Plus, Trash2, UserMinus, Users } from "lucide-react";
 import { useMemo, useState, type DragEvent } from "react";
 import { Fab } from "@/components/ui/fab";
 import { Button } from "@/components/ui/button";
@@ -132,13 +132,37 @@ export default function SeatingPage() {
         title="Tafelschikking"
         description="Sleep daggasten naar een tafel, of kies een tafel via het menu. Afmeldingen worden automatisch overgeslagen."
         actions={
+          <>
+            {seating_tables.length > 0 && (
+              <Button variant="secondary" onClick={() => window.print()}>
+                <Printer className="size-4" aria-hidden /> Printen
+              </Button>
+            )}
           <Button onClick={openNew} className="max-sm:hidden">
             <Plus className="size-4" aria-hidden /> Tafel
           </Button>
+          </>
         }
       />
 
-      <div className="mb-6 grid grid-cols-3 gap-3">
+      {/* Printversie: per tafel de namen */}
+      <div className="hidden print:block">
+        <h1 className="mb-6 font-serif text-3xl">Tafelschikking</h1>
+        <div className="grid grid-cols-3 gap-6">
+          {seating_tables.map((t) => (
+            <div key={t.id} className="break-inside-avoid">
+              <h2 className="border-b border-line pb-1 font-serif text-xl font-semibold">{t.name}</h2>
+              <ol className="mt-2 space-y-0.5 text-sm">
+                {byTable(t.id).flatMap((g) => (g.plus_one ? [g.name, `+1 van ${g.name.split(" ")[0]}`] : [g.name])).map((n, i) => (
+                  <li key={i}>{n}</li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-6 grid grid-cols-3 gap-3 print:hidden">
         {[
           { l: "Tafels", v: seating_tables.length },
           { l: "Plekken", v: `${needed} / ${totalSeats}` },
@@ -152,7 +176,7 @@ export default function SeatingPage() {
       </div>
 
       <LayoutGroup>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
+      <div className="print:hidden grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
         {/* Nog niet geplaatst */}
         <section
           onDragOver={allowDrop("pool")}

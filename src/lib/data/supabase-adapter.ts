@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { COLLECTION_KEYS, emptyCollections, withWeddingDefaults, type Collections, type Wedding } from "../types";
+import { COLLECTION_KEYS, OPTIONAL_COLLECTIONS, emptyCollections, withRowDefaults, withWeddingDefaults, type Collections, type Wedding } from "../types";
 import type { DataAdapter } from "./adapter";
 
-const NUMERIC_FIELDS = new Set(["budget_total", "estimated", "actual", "price"]);
+const NUMERIC_FIELDS = new Set(["budget_total", "estimated", "actual", "price", "deposit", "amount"]);
 
 /** Postgres `numeric` komt als string terug – normaliseer naar number. */
 function normalize<T>(row: T): T {
@@ -53,8 +53,11 @@ export function createSupabaseAdapter(sb: SupabaseClient): DataAdapter {
           ),
         );
         results.forEach((res, i) => {
+          const key = COLLECTION_KEYS[i];
+          // Nieuwere tabellen die nog niet gemigreerd zijn: leeg laten i.p.v. de hele app te blokkeren.
+          if (res.error && OPTIONAL_COLLECTIONS.includes(key) && isMissingSchema(res.error)) return;
           check(res.error);
-          (collections[COLLECTION_KEYS[i]] as unknown[]) = (res.data ?? []).map(normalize);
+          (collections[key] as unknown[]) = (res.data ?? []).map((r) => withRowDefaults(key, normalize(r)));
         });
       }
       return { kind: "ok", wedding, collections, email: user.email };
