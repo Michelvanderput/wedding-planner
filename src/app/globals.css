@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+@theme {
+  /* Typografie */
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-script: var(--font-great-vibes), cursive;
+
+  /* Ivoor – achtergrond */
+  --color-ivory: #fbf7f4;
+  --color-ivory-deep: #f5ede7;
+
+  /* Rozenblad – primair */
+  --color-rose-50: #fdf3f6;
+  --color-rose-100: #fbe4ec;
+  --color-rose-200: #f5c7d6;
+  --color-rose-300: #eba0b8;
+  --color-rose-400: #dc7497;
+  --color-rose-500: #c8527a;
+  --color-rose-600: #ae3b63;
+  --color-rose-700: #8f2e50;
+  --color-rose-800: #6e2640;
+  --color-rose-900: #4a1a2c;
+
+  /* Champagne – accent */
+  --color-gold-50: #fbf7ee;
+  --color-gold-100: #f6eedc;
+  --color-gold-200: #ecdcb6;
+  --color-gold-300: #e2c992;
+  --color-gold-400: #cdab6a;
+  --color-gold-500: #b8904a;
+  --color-gold-600: #9a7535;
+  --color-gold-700: #7a5b28;
+
+  /* Salie – succes / rust */
+  --color-sage-50: #f3f6f2;
+  --color-sage-100: #e9efe8;
+  --color-sage-200: #d3dfd0;
+  --color-sage-300: #b7c8b3;
+  --color-sage-500: #7d9a78;
+  --color-sage-600: #637f5e;
+  --color-sage-700: #4f6b4b;
+
+  /* Inkt – tekst */
+  --color-ink-900: #2b1d22;
+  --color-ink-700: #4a3a40;
+  --color-ink-500: #6f5f65;
+  --color-ink-300: #b3a6ab;
+  --color-line: #eee2e6;
+
+  --shadow-soft: 0 1px 2px rgb(74 26 44 / 0.04), 0 8px 24px -8px rgb(74 26 44 / 0.1);
+  --shadow-lift: 0 2px 4px rgb(74 26 44 / 0.05), 0 18px 40px -12px rgb(74 26 44 / 0.18);
+  --shadow-glow: 0 10px 30px -10px rgb(174 59 99 / 0.45);
+
+  --animate-shimmer: shimmer 2.2s linear infinite;
+  --animate-float: float 7s ease-in-out infinite;
+
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(3deg); }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-ivory font-sans text-ink-900;
+  }
+  h1, h2, h3 {
+    @apply font-serif;
+    text-wrap: balance;
+  }
+  /* Cormorant gebruikt standaard mediaeval-cijfers; voor data willen we rechte cijfers. */
+  .font-serif, h1, h2, h3 {
+    font-variant-numeric: lining-nums;
+  }
+  ::selection {
+    @apply bg-rose-200 text-rose-900;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-rose-500);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  button, [role="button"], a, select, label[for], input[type="checkbox"] {
+    cursor: pointer;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-3xl border border-line bg-white/80 shadow-[var(--shadow-soft)] backdrop-blur-sm;
+  }
+  .field {
+    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink-900 placeholder:text-ink-300 transition focus:border-rose-300 focus:ring-4 focus:ring-rose-100 focus:outline-none;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink-700;
+  }
+  .paper {
+    background-image:
+      radial-gradient(60rem 30rem at 110% -10%, rgb(245 199 214 / 0.35), transparent 60%),
+      radial-gradient(40rem 30rem at -10% 110%, rgb(236 220 182 / 0.35), transparent 60%);
+  }
+  .shine {
+    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.55) 50%, transparent 70%);
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+  /* Cijfers: DM Sans met tabulaire, rechte cijfers (Cormorant-subset heeft geen lnum) */
+  .stat {
+    @apply font-sans font-semibold tracking-tight tabular-nums;
+  }
+  .text-gradient {
+    @apply bg-gradient-to-r from-rose-600 via-rose-500 to-gold-500 bg-clip-text text-transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  aside, header, nav, [aria-live] { display: none !important; }
+  main { margin: 0 !important; padding: 0 !important; }
+  body, .paper { background: #fff !important; }
+  .card { box-shadow: none !important; border: none !important; }
+}
