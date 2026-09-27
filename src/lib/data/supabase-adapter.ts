@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { COLLECTION_KEYS, emptyCollections, type Collections, type Wedding } from "../types";
+import { COLLECTION_KEYS, emptyCollections, withWeddingDefaults, type Collections, type Wedding } from "../types";
 import type { DataAdapter } from "./adapter";
 
 const NUMERIC_FIELDS = new Set(["budget_total", "estimated", "actual", "price"]);
@@ -14,14 +14,16 @@ function normalize<T>(row: T): T {
 }
 
 export const MISSING_SCHEMA =
-  "De database is nog niet ingericht. Voer supabase/migrations/20260927000000_init.sql uit in de Supabase SQL-editor.";
+  "De database is nog niet (volledig) ingericht. Voer de SQL-bestanden in supabase/migrations/ op volgorde uit in de Supabase SQL-editor.";
 
 /** Herkent "tabel/functie bestaat niet" (PostgREST-schemacache of Postgres zelf). */
 export const isMissingSchema = (e: { code?: string; message?: string }) =>
-  e.code === "PGRST205" || e.code === "PGRST202" || e.code === "42P01" || /could not find the (table|function)/i.test(e.message ?? "");
+  ["PGRST205", "PGRST202", "PGRST204", "42P01", "42703"].includes(e.code ?? "") ||
+  /could not find the (table|function|'.+' column)/i.test(e.message ?? "");
 
 function check(error: { message: string; code?: string } | null) {
   if (!error) return;
+  if (error.code === "23505" && /public_slug/.test(error.message)) throw new Error("Deze link is al in gebruik. Kies een andere.");
   throw new Error(isMissingSchema(error) ? MISSING_SCHEMA : error.message);
 }
 
@@ -41,7 +43,7 @@ export function createSupabaseAdapter(sb: SupabaseClient): DataAdapter {
         .order("created_at", { ascending: true })
         .limit(1);
       check(error);
-      const wedding = weddings?.[0] ? normalize(weddings[0] as Wedding) : null;
+      const wedding = weddings?.[0] ? withWeddingDefaults(normalize(weddings[0] as Wedding)) : null;
       const collections = emptyCollections();
 
       if (wedding) {

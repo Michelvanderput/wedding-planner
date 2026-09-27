@@ -1,4 +1,5 @@
 import type {
+  Audience,
   BudgetItem,
   Collections,
   Guest,
@@ -171,17 +172,18 @@ export function buildTimeline(wedding: Pick<Wedding, "id" | "ceremony_time">): T
     const mins = (((base + offset) % 1440) + 1440) % 1440;
     return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
   };
-  const rows: [number, number, string, string][] = [
-    [-300, -180, "Haar & make-up", "Thuis / hotel"],
-    [-150, -120, "First look & fotoshoot", ""],
-    [-30, 0, "Ontvangst gasten", ""],
-    [0, 45, "Ceremonie", ""],
-    [45, 150, "Toost, taart & felicitaties", ""],
-    [180, 330, "Diner", ""],
-    [360, 375, "Openingsdans", ""],
-    [375, 600, "Feest", ""],
+  const rows: [number, number, string, string, Audience][] = [
+    [-300, -180, "Haar & make-up", "Thuis / hotel", "private"],
+    [-150, -120, "First look & fotoshoot", "", "private"],
+    [-30, 0, "Ontvangst gasten", "", "day"],
+    [0, 45, "Ceremonie", "", "day"],
+    [45, 150, "Toost, taart & felicitaties", "", "day"],
+    [180, 330, "Diner", "", "day"],
+    [330, 360, "Ontvangst avondgasten", "", "all"],
+    [360, 375, "Openingsdans", "", "all"],
+    [375, 600, "Feest", "", "all"],
   ];
-  return rows.map(([s, e, title, location]) => ({
+  return rows.map(([s, e, title, location, audience]) => ({
     id: uid(),
     wedding_id: wedding.id,
     created_at: nowIso(),
@@ -190,6 +192,7 @@ export function buildTimeline(wedding: Pick<Wedding, "id" | "ceremony_time">): T
     title,
     location,
     notes: "",
+    audience,
   }));
 }
 

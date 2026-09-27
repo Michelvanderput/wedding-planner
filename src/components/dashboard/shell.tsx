@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   ListChecks,
   LogOut,
+  MailOpen,
   Menu,
   Settings,
   Store,
@@ -38,6 +39,7 @@ export const NAV: NavItem[] = [
   { href: "/dashboard/dagplanning", label: "Draaiboek", icon: Clock },
   { href: "/dashboard/tafelschikking", label: "Tafelschikking", icon: Armchair },
   { href: "/dashboard/inspiratie", label: "Inspiratie", icon: Images },
+  { href: "/dashboard/uitnodiging", label: "Uitnodiging", icon: MailOpen },
   { href: "/dashboard/instellingen", label: "Instellingen", icon: Settings },
 ];
 

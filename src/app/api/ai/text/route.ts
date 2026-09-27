@@ -99,6 +99,33 @@ Schrijf één Engelse, beeldende prompt (max 50 woorden) voor een AI-beeldgenera
         return NextResponse.json({ text: out.replace(/^["']|["']$/g, "") });
       }
 
+      case "welcome": {
+        const out = await complete(
+          `${describe(c)}
+Toon: ${clip(c.tone, 60) || "warm en persoonlijk"}
+Extra: ${clip(c.extra, 300) || "geen"}
+
+Schrijf een welkomsttekst (60-100 woorden) voor de uitnodigingswebsite van dit bruidspaar, gericht aan hun gasten, in de wij-vorm van het bruidspaar. Alleen de tekst.`,
+          SYSTEM,
+          500,
+        );
+        return NextResponse.json({ text: out });
+      }
+
+      case "faq": {
+        const out = await complete(
+          `${describe(c)}
+Al bekend: dresscode "${clip(c.dress_code, 120)}", cadeau "${clip(c.gifts, 120)}", parkeren "${clip(c.parking, 120)}".
+Bestaande vragen: ${clip(c.existing, 600) || "geen"}
+
+Bedenk 5 veelgestelde vragen van gasten met een kort, vriendelijk antwoord namens het bruidspaar (wij-vorm). Gebruik alleen informatie die hierboven staat; waar iets onbekend is, schrijf dan een antwoord met [INVULLEN] erin.
+Antwoord ALLEEN met JSON: [{"q": string, "a": string}]`,
+          SYSTEM,
+          1200,
+        );
+        return NextResponse.json({ items: extractJson(out) });
+      }
+
       case "coach": {
         const question = clip(c.question, 800).trim();
         if (!question) return NextResponse.json({ error: "Stel eerst een vraag." }, { status: 400 });

@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Mail, MailCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Logo } from "@/components/decor/logo";
 import { Petals } from "@/components/decor/petals";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,21 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState(params.get("error") ? "Inloggen via de link is mislukt. Probeer het opnieuw." : "");
+  const errParam = params.get("error");
+  const [error, setError] = useState(
+    errParam === "not_allowed"
+      ? "Dit account heeft geen toegang tot deze planner. Alleen het bruidspaar kan inloggen."
+      : errParam
+        ? "Inloggen via de link is mislukt. Probeer het opnieuw."
+        : "",
+  );
+
+  // Niet-toegestaan account direct uitloggen, zodat een ander account kan inloggen.
+  useEffect(() => {
+    if (errParam !== "not_allowed") return;
+    setError("Dit account heeft geen toegang tot deze planner. Alleen het bruidspaar kan inloggen.");
+    void sb?.auth.signOut();
+  }, [errParam, sb]);
 
   const redirectTo = () =>
     `${SITE_URL || window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;

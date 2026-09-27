@@ -67,3 +67,14 @@ export const initials = (name: string) =>
 
 export const coupleName = (a?: string, b?: string) =>
   [a, b].filter((s) => s && s.trim()).join(" & ") || "Jullie bruiloft";
+
+/** "Emma & Lucas" → "emma-en-lucas" */
+export const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, "-en-")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);

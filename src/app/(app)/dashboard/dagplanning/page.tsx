@@ -4,18 +4,24 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Clock, MapPin, Plus, Printer, Sparkles, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input, Textarea } from "@/components/ui/field";
-import { EmptyState, PageHeader } from "@/components/ui/misc";
+import { Input, Select, Textarea } from "@/components/ui/field";
+import { Badge, EmptyState, PageHeader } from "@/components/ui/misc";
 import { Modal } from "@/components/ui/modal";
 import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/ui/toast";
 import { aiText, useAiEnabled } from "@/lib/ai";
 import { useWedding } from "@/lib/store";
-import type { TimelineEvent } from "@/lib/types";
+import type { Audience, TimelineEvent } from "@/lib/types";
+
+const AUDIENCE: { value: Audience; label: string }[] = [
+  { value: "all", label: "Iedereen (ook avondgasten)" },
+  { value: "day", label: "Alleen daggasten" },
+  { value: "private", label: "Alleen wij (niet op uitnodiging)" },
+];
 import { coupleName, formatDate, nowIso, uid } from "@/lib/utils";
 
 type Draft = Omit<TimelineEvent, "id" | "wedding_id" | "created_at">;
-const blank = (): Draft => ({ start_time: "12:00", end_time: "", title: "", location: "", notes: "" });
+const blank = (): Draft => ({ start_time: "12:00", end_time: "", title: "", location: "", notes: "", audience: "all" });
 const TIME = /^\d{2}:\d{2}$/;
 
 export default function TimelinePage() {
@@ -39,7 +45,7 @@ export default function TimelinePage() {
   }
   function openEdit(e: TimelineEvent) {
     setEditing(e);
-    setDraft({ start_time: e.start_time, end_time: e.end_time, title: e.title, location: e.location, notes: e.notes });
+    setDraft({ start_time: e.start_time, end_time: e.end_time, title: e.title, location: e.location, notes: e.notes, audience: e.audience ?? "all" });
     setOpen(true);
   }
   function save() {
@@ -74,6 +80,7 @@ export default function TimelinePage() {
           title: String(i.title).slice(0, 120),
           location: String(i.location ?? "").slice(0, 120),
           notes: String(i.notes ?? "").slice(0, 400),
+          audience: "all" as const,
         }));
       if (!items.length) throw new Error("Geen bruikbaar draaiboek ontvangen");
       if (replace === "replace") timeline_events.forEach((e) => remove("timeline_events", e.id));
@@ -153,7 +160,11 @@ export default function TimelinePage() {
                         highlight ? "border-rose-200 bg-gradient-to-r from-rose-50 to-white" : "border-line bg-white hover:border-rose-200"
                       }`}
                     >
-                      <p className="font-medium text-ink-900">{e.title}</p>
+                      <p className="flex flex-wrap items-center gap-2 font-medium text-ink-900">
+                        {e.title}
+                        {e.audience === "day" && <Badge tone="gold">Daggasten</Badge>}
+                        {e.audience === "private" && <Badge tone="ink">Privé</Badge>}
+                      </p>
                       {e.location && (
                         <p className="mt-0.5 flex items-center gap-1 text-sm text-ink-500">
                           <MapPin className="size-3.5" aria-hidden /> {e.location}
@@ -189,7 +200,8 @@ export default function TimelinePage() {
           <Input className="sm:col-span-2" label="Wat gebeurt er?" required value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
           <Input label="Begintijd" type="time" required value={draft.start_time} onChange={(e) => setDraft({ ...draft, start_time: e.target.value })} />
           <Input label="Eindtijd" type="time" value={draft.end_time} onChange={(e) => setDraft({ ...draft, end_time: e.target.value })} />
-          <Input className="sm:col-span-2" label="Locatie" value={draft.location} onChange={(e) => setDraft({ ...draft, location: e.target.value })} />
+          <Input label="Locatie" value={draft.location} onChange={(e) => setDraft({ ...draft, location: e.target.value })} />
+          <Select label="Zichtbaar op uitnodiging voor" value={draft.audience} onChange={(e) => setDraft({ ...draft, audience: e.target.value as Audience })} options={AUDIENCE} />
           <Textarea className="sm:col-span-2" label="Notities" hint="Bijv. wie is verantwoordelijk, wat moet er klaarstaan." value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} />
           <button type="submit" hidden />
         </form>

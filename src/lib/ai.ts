@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export type AiTask = "checklist" | "timeline" | "invitation" | "vendor_email" | "image_prompt" | "coach";
+export type AiTask = "checklist" | "timeline" | "invitation" | "vendor_email" | "image_prompt" | "coach" | "welcome" | "faq";
 
 async function post<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, {

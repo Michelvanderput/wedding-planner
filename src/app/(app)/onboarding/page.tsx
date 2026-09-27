@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check, Heart, HardDriveUpload, PartyPopper } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, HardDriveUpload, Heart, HeartHandshake, PartyPopper } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LoadError } from "@/components/dashboard/load-error";
@@ -14,7 +14,7 @@ import { useToast } from "@/components/ui/toast";
 import { WEDDING_STYLES, buildBudget, buildChecklist, buildDemo, buildTimeline } from "@/lib/defaults";
 import { clearLocalSnapshot, readLocalSnapshot, type Snapshot } from "@/lib/data/local-adapter";
 import { useWedding } from "@/lib/store";
-import type { Wedding } from "@/lib/types";
+import { defaultSite, type Wedding } from "@/lib/types";
 import { cn, formatEuro, nowIso, uid } from "@/lib/utils";
 
 const STEPS = ["Jullie", "Datum", "Budget", "Stijl", "Klaar"];
@@ -23,6 +23,7 @@ export default function OnboardingPage() {
   const { status, mode, createWedding } = useWedding();
   const [local, setLocal] = useState<Snapshot | null>(null);
   const [importing, setImporting] = useState(false);
+  const [partnerCode, setPartnerCode] = useState("");
   const router = useRouter();
   const toast = useToast();
   const [step, setStep] = useState(0);
@@ -93,6 +94,8 @@ export default function OnboardingPage() {
       guest_estimate: Number(form.guest_estimate) || 0,
       style: form.style,
       color_palette: style?.colors ?? [],
+      public_slug: null,
+      site: defaultSite(),
     };
     try {
       await createWedding(wedding, {
@@ -173,6 +176,32 @@ export default function OnboardingPage() {
                   <Heart className="mx-auto mb-3 hidden size-6 fill-rose-300 text-rose-400 sm:block" aria-hidden />
                   <Input label="Partner 2" placeholder="Lucas" value={form.partner_two} onChange={(e) => set("partner_two", e.target.value)} />
                 </div>
+                {mode === "supabase" && (
+                  <details className="group mt-8 rounded-2xl border border-line bg-ivory/60 p-4">
+                    <summary className="flex min-h-8 cursor-pointer list-none items-center gap-2 text-sm font-medium text-ink-700">
+                      <HeartHandshake className="size-4 text-rose-500" aria-hidden />
+                      Heeft je partner de planning al aangemaakt? Voer de uitnodigingscode in
+                    </summary>
+                    <form
+                      className="mt-3 flex gap-2"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (partnerCode.trim()) router.push(`/partner/${encodeURIComponent(partnerCode.trim())}`);
+                      }}
+                    >
+                      <label htmlFor="partner-code" className="sr-only">Uitnodigingscode</label>
+                      <input
+                        id="partner-code"
+                        className="field uppercase"
+                        placeholder="Bijv. 1F24FCCD8B"
+                        value={partnerCode}
+                        onChange={(e) => setPartnerCode(e.target.value)}
+                        autoComplete="off"
+                      />
+                      <Button type="submit" variant="secondary" disabled={!partnerCode.trim()}>Koppelen</Button>
+                    </form>
+                  </details>
+                )}
                 {form.partner_one && form.partner_two && (
                   <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-10 text-center font-script text-5xl text-rose-600">
                     {form.partner_one} & {form.partner_two}

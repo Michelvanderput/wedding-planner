@@ -1,4 +1,4 @@
-import { COLLECTION_KEYS, emptyCollections, type Collections, type Wedding } from "../types";
+import { COLLECTION_KEYS, emptyCollections, withWeddingDefaults, type Collections, type Wedding } from "../types";
 import type { DataAdapter } from "./adapter";
 
 const KEY = "bruiloftsplanner:v1";
@@ -23,7 +23,9 @@ function read(): Snapshot {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Snapshot;
-      return { wedding: parsed.wedding ?? null, collections: { ...emptyCollections(), ...parsed.collections } };
+      const collections = { ...emptyCollections(), ...parsed.collections };
+      collections.timeline_events = collections.timeline_events.map((e) => ({ ...e, audience: e.audience ?? "all" }));
+      return { wedding: parsed.wedding ? withWeddingDefaults(parsed.wedding) : null, collections };
     }
   } catch {
     // corrupte of geblokkeerde opslag → begin leeg

@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import { Check, Cloud, Download, HardDrive, Sparkles, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent } from "react";
+import { PartnerCard } from "@/components/dashboard/partner-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { Badge, PageHeader } from "@/components/ui/misc";
@@ -22,6 +23,8 @@ export default function SettingsPage() {
   const ai = useAiEnabled();
   const [confirm, setConfirm] = useState(false);
   const [confirmText, setConfirmText] = useState("");
+  const [role, setRole] = useState<"owner" | "editor" | null>(null);
+  const onRole = useCallback((r: "owner" | "editor" | null) => setRole(r), []);
   const [form, setForm] = useState(() => ({
     partner_one: wedding?.partner_one ?? "",
     partner_two: wedding?.partner_two ?? "",
@@ -76,7 +79,7 @@ export default function SettingsPage() {
       <PageHeader eyebrow="Alles op maat" title="Instellingen" />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <motion.form initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} onSubmit={save} className="card p-6">
             <h2 className="text-2xl font-semibold">Jullie bruiloft</h2>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -121,7 +124,8 @@ export default function SettingsPage() {
           </motion.section>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
+          <PartnerCard onRole={onRole} />
           <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card p-6">
             <h2 className="text-xl font-semibold">Status</h2>
             <ul className="mt-4 space-y-4 text-sm">
@@ -156,9 +160,11 @@ export default function SettingsPage() {
               <Button variant="secondary" onClick={exportJson}>
                 <Download className="size-4" aria-hidden /> Backup downloaden
               </Button>
-              <Button variant="danger" onClick={() => setConfirm(true)}>
-                <Trash2 className="size-4" aria-hidden /> Planning verwijderen
-              </Button>
+              {role !== "editor" && (
+                <Button variant="danger" onClick={() => setConfirm(true)}>
+                  <Trash2 className="size-4" aria-hidden /> Planning verwijderen
+                </Button>
+              )}
             </div>
           </motion.section>
         </div>

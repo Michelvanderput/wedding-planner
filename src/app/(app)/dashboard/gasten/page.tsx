@@ -1,8 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Copy, Download, Link2, Mail, Pencil, Plus, Search, Sparkles, Trash2, UserPlus, Users, Utensils } from "lucide-react";
+import { Copy, Download, ExternalLink, FileSpreadsheet, Link2, Mail, Send, Pencil, Plus, Search, Sparkles, Trash2, UserPlus, Users, Utensils } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { GuestImportModal } from "@/components/dashboard/guest-import";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea, Toggle } from "@/components/ui/field";
 import { Badge, EmptyState, PageHeader } from "@/components/ui/misc";
@@ -10,6 +11,7 @@ import { Modal } from "@/components/ui/modal";
 import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/ui/toast";
 import { aiText, useAiEnabled } from "@/lib/ai";
+import { buildGuestWorkbook, downloadBlob } from "@/lib/guest-excel";
 import { INVITED_LABEL, RSVP_LABEL } from "@/lib/defaults";
 import { useWedding } from "@/lib/store";
 import { SITE_URL } from "@/lib/supabase/config";
@@ -40,6 +42,7 @@ export default function GuestsPage() {
   const [invFilter, setInvFilter] = useState<InvitedTo | "all">("all");
   const [open, setOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [bulk, setBulk] = useState("");
   const [bulkInvited, setBulkInvited] = useState<InvitedTo>("day");
   const [editing, setEditing] = useState<Guest | null>(null);
@@ -127,16 +130,13 @@ export default function GuestsPage() {
     }
   }
 
-  function exportCsv() {
-    const head = ["Naam", "E-mail", "Telefoon", "Kant", "Groep", "Uitgenodigd", "RSVP", "+1", "Dieetwensen"];
-    const rows = guests.map((g) => [g.name, g.email, g.phone, sideLabel[g.side], g.group_name, INVITED_LABEL[g.invited_to], RSVP_LABEL[g.rsvp], g.plus_one ? "Ja" : "Nee", g.dietary]);
-    const csv = [head, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n");
-    const url = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "gastenlijst.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+  async function exportExcel() {
+    if (!wedding) return;
+    try {
+      downloadBlob(await buildGuestWorkbook(wedding, [...guests].sort((a, b) => a.name.localeCompare(b.name, "nl"))), "gastenlijst.xlsx");
+    } catch (e) {
+      toast.error("Exporteren mislukt", e instanceof Error ? e.message : undefined);
+    }
   }
 
   async function writeInvite() {
@@ -180,6 +180,9 @@ export default function GuestsPage() {
                 <Sparkles className="size-4 text-gold-600" aria-hidden /> Uitnodigingstekst
               </Button>
             )}
+            <Button variant="secondary" onClick={() => setImportOpen(true)}>
+              <FileSpreadsheet className="size-4 text-sage-600" aria-hidden /> Excel import
+            </Button>
             <Button variant="secondary" onClick={() => setBulkOpen(true)}>
               <UserPlus className="size-4" aria-hidden /> Snel toevoegen
             </Button>
@@ -229,8 +232,8 @@ export default function GuestsPage() {
             ]}
           />
           {guests.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={exportCsv} className="h-11">
-              <Download className="size-4" aria-hidden /> CSV
+            <Button variant="ghost" size="sm" onClick={exportExcel} className="h-11">
+              <Download className="size-4" aria-hidden /> Excel
             </Button>
           )}
         </div>
@@ -240,8 +243,15 @@ export default function GuestsPage() {
         <EmptyState
           icon={Users}
           title="Nog geen gasten"
-          body="Voeg gasten één voor één toe of plak in één keer een hele lijst met namen."
-          action={<Button onClick={() => setBulkOpen(true)}>Lijst plakken</Button>}
+          body="Importeer je lijst uit Excel, plak een rij namen of voeg gasten één voor één toe."
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button onClick={() => setImportOpen(true)}>
+                <FileSpreadsheet className="size-4" aria-hidden /> Excel importeren
+              </Button>
+              <Button variant="secondary" onClick={() => setBulkOpen(true)}>Namen plakken</Button>
+            </div>
+          }
         />
       ) : list.length === 0 ? (
         <p className="py-16 text-center text-ink-500">Geen gasten gevonden met deze filters.</p>
@@ -307,7 +317,7 @@ export default function GuestsPage() {
                       </a>
                     )}
                     {mode === "supabase" && (
-                      <button onClick={() => copy(rsvpLink(g), "RSVP-link gekopieerd")} className="grid size-9 place-items-center rounded-full text-ink-500 hover:bg-rose-50 hover:text-rose-700" aria-label={`Kopieer RSVP-link voor ${g.name}`}>
+                      <button onClick={() => copy(rsvpLink(g), "Uitnodigingslink gekopieerd")} className="grid size-9 place-items-center rounded-full text-ink-500 hover:bg-rose-50 hover:text-rose-700" aria-label={`Kopieer uitnodigingslink voor ${g.name}`}>
                         <Link2 className="size-4" />
                       </button>
                     )}
@@ -351,13 +361,35 @@ export default function GuestsPage() {
           <button type="submit" hidden />
         </form>
         {editing && mode === "supabase" && (
-          <div className="mt-4 flex items-center gap-2 rounded-2xl bg-ivory p-3 text-sm">
-            <Link2 className="size-4 shrink-0 text-rose-600" aria-hidden />
-            <span className="min-w-0 flex-1 truncate text-ink-500">{rsvpLink(editing)}</span>
-            <Button size="sm" variant="secondary" onClick={() => copy(rsvpLink(editing), "RSVP-link gekopieerd")}>Kopieer</Button>
+          <div className="mt-5 rounded-2xl bg-ivory p-4">
+            <p className="text-sm font-medium text-ink-900">Persoonlijke uitnodiging</p>
+            <p className="mt-0.5 truncate text-xs text-ink-500">{rsvpLink(editing)}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" onClick={() => copy(rsvpLink(editing), "Link gekopieerd")}>
+                <Copy className="size-4" aria-hidden /> Kopieer link
+              </Button>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`Lieve ${editing.name.split(" ")[0]}, hierbij onze uitnodiging voor de bruiloft: ${rsvpLink(editing)}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3.5 text-sm font-medium hover:bg-rose-50"
+              >
+                <Send className="size-4" aria-hidden /> WhatsApp
+              </a>
+              <a
+                href={`/rsvp/${editing.rsvp_token}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3.5 text-sm font-medium hover:bg-rose-50"
+              >
+                <ExternalLink className="size-4" aria-hidden /> Bekijk
+              </a>
+            </div>
           </div>
         )}
       </Modal>
+
+      <GuestImportModal open={importOpen} onClose={() => setImportOpen(false)} />
 
       {/* Snel toevoegen */}
       <Modal

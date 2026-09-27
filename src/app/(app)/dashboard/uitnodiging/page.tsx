@@ -1,0 +1,416 @@
+"use client";
+
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, Copy, ExternalLink, Eye, Globe, ImageIcon, Link2, Plus, Sparkles, Trash2, Users, X } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { Input, Textarea, Toggle } from "@/components/ui/field";
+import { Badge, PageHeader } from "@/components/ui/misc";
+import { useToast } from "@/components/ui/toast";
+import { aiText, useAiEnabled } from "@/lib/ai";
+import { useWedding } from "@/lib/store";
+import { SITE_URL } from "@/lib/supabase/config";
+import type { FaqItem, SiteContent } from "@/lib/types";
+import { cn, coupleName, formatDate, slugify } from "@/lib/utils";
+
+const SLUG = /^[a-z0-9]([a-z0-9-]{1,58})[a-z0-9]$/;
+
+export default function InvitationEditor() {
+  const { wedding, updateWedding, inspirations, guests, mode } = useWedding();
+  const toast = useToast();
+  const ai = useAiEnabled();
+  const [site, setSite] = useState<SiteContent | null>(wedding?.site ?? null);
+  const [slug, setSlug] = useState(wedding?.public_slug ?? "");
+  const [aiBusy, setAiBusy] = useState<"welcome" | "faq" | null>(null);
+  const [origin, setOrigin] = useState(SITE_URL);
+
+  useEffect(() => {
+    if (!SITE_URL) setOrigin(window.location.origin);
+  }, []);
+
+  useEffect(() => {
+    if (wedding && !wedding.public_slug && !slug) setSlug(slugify(`${wedding.partner_one} en ${wedding.partner_two}`));
+  }, [wedding, slug]);
+
+  const dirty = useMemo(
+    () => !!wedding && !!site && (JSON.stringify(site) !== JSON.stringify(wedding.site) || (slug || null) !== wedding.public_slug),
+    [site, slug, wedding],
+  );
+
+  // Waarschuwen bij weggaan met onopgeslagen wijzigingen.
+  useEffect(() => {
+    if (!dirty) return;
+    const h = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", h);
+    return () => window.removeEventListener("beforeunload", h);
+  }, [dirty]);
+
+  if (!wedding || !site) return null;
+  const slugValid = SLUG.test(slug);
+  const publicUrl = `${origin}/uitnodiging/${slug}`;
+  const set = <K extends keyof SiteContent>(k: K, v: SiteContent[K]) => setSite({ ...site, [k]: v });
+  const setFaq = (faq: FaqItem[]) => set("faq", faq);
+
+  function save(extra?: Partial<SiteContent>) {
+    if (!site) return;
+    if ((slug && !slugValid) || (extra?.published && !slugValid)) {
+      toast.error("Controleer de link", "Gebruik 3–60 kleine letters, cijfers of streepjes.");
+      return;
+    }
+    const next = { ...site, ...extra, faq: site.faq.filter((f) => f.q.trim() || f.a.trim()) };
+    setSite(next);
+    updateWedding({ site: next, public_slug: slug || null });
+    toast.success(extra?.published === true ? "Uitnodiging gepubliceerd!" : extra?.published === false ? "Uitnodiging offline gehaald" : "Opgeslagen");
+  }
+
+  async function copy(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Link gekopieerd");
+    } catch {
+      toast.error("Kopiëren lukte niet");
+    }
+  }
+
+  const ctx = {
+    couple: coupleName(wedding.partner_one, wedding.partner_two),
+    date: formatDate(wedding.wedding_date),
+    venue: wedding.venue,
+    city: wedding.city,
+    style: wedding.style,
+  };
+
+  async function writeWelcome() {
+    setAiBusy("welcome");
+    try {
+      const res = await aiText("welcome", { ...ctx, extra: site?.welcome });
+      if (res.text) set("welcome", res.text);
+    } catch (e) {
+      toast.error("Tekst schrijven mislukt", e instanceof Error ? e.message : undefined);
+    } finally {
+      setAiBusy(null);
+    }
+  }
+
+  async function suggestFaq() {
+    if (!site) return;
+    setAiBusy("faq");
+    try {
+      const res = await aiText("faq", {
+        ...ctx,
+        dress_code: site.dress_code,
+        gifts: site.gifts,
+        parking: site.parking,
+        existing: site.faq.map((f) => f.q).join("; "),
+      });
+      const items = ((res.items ?? []) as FaqItem[]).filter((i) => i?.q && i?.a).map((i) => ({ q: String(i.q), a: String(i.a) }));
+      setSite((s) => (s ? { ...s, faq: [...s.faq, ...items] } : s));
+      toast.info(`${items.length} vragen toegevoegd`, "Controleer de antwoorden en vul [INVULLEN] aan.");
+    } catch (e) {
+      toast.error("Suggesties mislukt", e instanceof Error ? e.message : undefined);
+    } finally {
+      setAiBusy(null);
+    }
+  }
+
+  const images = inspirations.filter((i) => i.image_url);
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Voor jullie gasten"
+        title="Uitnodiging"
+        description="Een eigen pagina met alle informatie voor jullie gasten: programma, locatie, praktische zaken en RSVP."
+        actions={
+          <>
+            <ButtonLink href="/voorbeeld" variant="secondary">
+              <Eye className="size-4" aria-hidden /> Voorbeeld
+            </ButtonLink>
+            <Button onClick={() => save()} disabled={!dirty}>
+              {dirty ? "Opslaan" : <><Check className="size-4" aria-hidden /> Opgeslagen</>}
+            </Button>
+          </>
+        }
+      />
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+        <div className="min-w-0 space-y-6">
+          {/* Welkom */}
+          <section className="card p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-2xl font-semibold">Welkomsttekst</h2>
+              {ai !== false && (
+                <Button size="sm" variant="secondary" onClick={writeWelcome} loading={aiBusy === "welcome"}>
+                  <Sparkles className="size-4 text-gold-600" aria-hidden /> {site.welcome ? "Herschrijf" : "Schrijf met AI"}
+                </Button>
+              )}
+            </div>
+            <Textarea
+              className="mt-4"
+              label="Persoonlijke boodschap"
+              rows={5}
+              placeholder="Lieve familie en vrienden, wat zijn we blij dat jullie deze dag met ons willen vieren…"
+              value={site.welcome}
+              onChange={(e) => set("welcome", e.target.value)}
+            />
+          </section>
+
+          {/* Locatie */}
+          <section className="card p-6">
+            <h2 className="text-2xl font-semibold">Locatie</h2>
+            <p className="mt-1 text-sm text-ink-500">
+              Naam en plaats ({[wedding.venue, wedding.city].filter(Boolean).join(", ") || "nog niet ingevuld"}) pas je aan bij{" "}
+              <Link href="/dashboard/instellingen" className="text-rose-700 underline-offset-2 hover:underline">
+                Instellingen
+              </Link>
+              .
+            </p>
+            <Input
+              className="mt-4"
+              label="Volledig adres"
+              placeholder="Straat 1, 1234 AB Plaats"
+              value={site.address}
+              onChange={(e) => set("address", e.target.value)}
+              hint="Voor de kaart en de knop 'Route plannen'."
+            />
+          </section>
+
+          {/* Praktisch */}
+          <section className="card p-6">
+            <h2 className="text-2xl font-semibold">Praktische info</h2>
+            <p className="mt-1 text-sm text-ink-500">Lege velden worden niet getoond.</p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <Textarea label="Dresscode" placeholder="Feestelijk, graag geen wit" value={site.dress_code} onChange={(e) => set("dress_code", e.target.value)} />
+              <Textarea label="Cadeautip" placeholder="Een bijdrage voor onze huwelijksreis" value={site.gifts} onChange={(e) => set("gifts", e.target.value)} />
+              <Textarea label="Parkeren & vervoer" placeholder="Gratis parkeren op het terrein" value={site.parking} onChange={(e) => set("parking", e.target.value)} />
+              <Textarea label="Overnachten" placeholder="Hotel De Linde op 5 min. rijden" value={site.accommodation} onChange={(e) => set("accommodation", e.target.value)} />
+            </div>
+          </section>
+
+          {/* FAQ */}
+          <section className="card p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-2xl font-semibold">Veelgestelde vragen</h2>
+              <div className="flex gap-2">
+                {ai !== false && (
+                  <Button size="sm" variant="secondary" onClick={suggestFaq} loading={aiBusy === "faq"}>
+                    <Sparkles className="size-4 text-gold-600" aria-hidden /> Suggesties
+                  </Button>
+                )}
+                <Button size="sm" variant="secondary" onClick={() => setFaq([...site.faq, { q: "", a: "" }])}>
+                  <Plus className="size-4" aria-hidden /> Vraag
+                </Button>
+              </div>
+            </div>
+            {site.faq.length === 0 ? (
+              <p className="mt-4 rounded-2xl bg-ivory px-4 py-6 text-center text-sm text-ink-500">
+                Bijvoorbeeld: &ldquo;Mogen kinderen mee?&rdquo; of &ldquo;Tot hoe laat duurt het feest?&rdquo;
+              </p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                <AnimatePresence initial={false}>
+                  {site.faq.map((f, i) => (
+                    <motion.li
+                      key={i}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className={cn("rounded-2xl border p-4", /\[INVULLEN\]/.test(f.a) ? "border-gold-300 bg-gold-50" : "border-line bg-white")}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="grid min-w-0 flex-1 gap-3">
+                          <Input label={`Vraag ${i + 1}`} value={f.q} onChange={(e) => setFaq(site.faq.map((x, j) => (j === i ? { ...x, q: e.target.value } : x)))} />
+                          <Textarea label="Antwoord" rows={2} value={f.a} onChange={(e) => setFaq(site.faq.map((x, j) => (j === i ? { ...x, a: e.target.value } : x)))} />
+                        </div>
+                        <button
+                          onClick={() => setFaq(site.faq.filter((_, j) => j !== i))}
+                          className="mt-7 grid size-10 shrink-0 place-items-center rounded-full text-ink-500 hover:bg-rose-50 hover:text-rose-700"
+                          aria-label={`Vraag ${i + 1} verwijderen`}
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </ul>
+            )}
+          </section>
+
+          {/* Contact & RSVP */}
+          <section className="card p-6">
+            <h2 className="text-2xl font-semibold">Contact & RSVP</h2>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <Input label="Ceremoniemeester" placeholder="Naam" value={site.contact_name} onChange={(e) => set("contact_name", e.target.value)} />
+              <Input label="Telefoon ceremoniemeester" type="tel" placeholder="06 12345678" value={site.contact_phone} onChange={(e) => set("contact_phone", e.target.value)} />
+              <Input label="Reageren vóór" type="date" value={site.rsvp_deadline} onChange={(e) => set("rsvp_deadline", e.target.value)} />
+            </div>
+          </section>
+
+          {/* Afbeelding */}
+          <section className="card p-6">
+            <h2 className="text-2xl font-semibold">Openingsfoto</h2>
+            <p className="mt-1 text-sm text-ink-500">Kies een beeld uit jullie moodboard of plak een link. Zonder foto krijgt de pagina een botanische illustratie.</p>
+            <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
+              <button
+                onClick={() => set("hero_image", "")}
+                aria-pressed={!site.hero_image}
+                className={cn(
+                  "grid aspect-[4/3] place-items-center rounded-xl border-2 text-xs text-ink-500 transition",
+                  !site.hero_image ? "border-rose-500 bg-rose-50" : "border-line bg-ivory hover:border-rose-200",
+                )}
+              >
+                <span className="flex flex-col items-center gap-1">
+                  <X className="size-4" aria-hidden /> Geen foto
+                </span>
+              </button>
+              {images.map((img) => (
+                <button
+                  key={img.id}
+                  onClick={() => set("hero_image", img.image_url)}
+                  aria-pressed={site.hero_image === img.image_url}
+                  aria-label={`Kies ${img.category}`}
+                  className={cn(
+                    "relative aspect-[4/3] overflow-hidden rounded-xl border-2 transition",
+                    site.hero_image === img.image_url ? "border-rose-500" : "border-transparent hover:border-rose-200",
+                  )}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.image_url} alt="" className="size-full object-cover" loading="lazy" />
+                </button>
+              ))}
+            </div>
+            {images.length === 0 && (
+              <p className="mt-3 flex items-center gap-2 text-sm text-ink-500">
+                <ImageIcon className="size-4" aria-hidden /> Nog geen beelden.{" "}
+                <Link href="/dashboard/inspiratie" className="text-rose-700 hover:underline">
+                  Maak er een in Inspiratie
+                </Link>
+              </p>
+            )}
+            <Input
+              className="mt-4"
+              label="Of plak een afbeeldingslink"
+              type="url"
+              placeholder="https://…"
+              value={images.some((i) => i.image_url === site.hero_image) ? "" : site.hero_image}
+              onChange={(e) => set("hero_image", e.target.value)}
+            />
+          </section>
+        </div>
+
+        {/* Zijkolom: publiceren & delen */}
+        <aside className="min-w-0 space-y-6 lg:sticky lg:top-6 lg:self-start">
+          <section className="card p-6">
+            <div className="flex items-center gap-3">
+              <span className={cn("grid size-10 place-items-center rounded-full", site.published ? "bg-sage-100 text-sage-700" : "bg-ivory-deep text-ink-500")}>
+                <Globe className="size-5" aria-hidden />
+              </span>
+              <div>
+                <h2 className="text-xl font-semibold">Algemene link</h2>
+                <Badge tone={site.published ? "sage" : "ink"}>{site.published ? "Online" : "Offline"}</Badge>
+              </div>
+            </div>
+            {mode === "local" ? (
+              <p className="mt-4 rounded-xl bg-gold-50 px-4 py-3 text-sm text-ink-700">
+                Koppel Supabase om de uitnodiging online te zetten. Het voorbeeld werkt wel al.
+              </p>
+            ) : (
+              <>
+                <div className="mt-4">
+                  <label htmlFor="slug" className="label">
+                    Adres van jullie pagina
+                  </label>
+                  <div className={cn("flex items-center overflow-hidden rounded-xl border bg-white focus-within:ring-4 focus-within:ring-rose-100", slug && !slugValid ? "border-rose-400" : "border-line")}>
+                    <span className="shrink-0 bg-ivory px-3 py-2.5 text-sm text-ink-500">/uitnodiging/</span>
+                    <input
+                      id="slug"
+                      className="min-w-0 flex-1 bg-transparent px-2 py-2.5 text-[15px] focus:outline-none"
+                      value={slug}
+                      onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 60))}
+                      aria-invalid={!!slug && !slugValid}
+                      aria-describedby="slug-hint"
+                    />
+                  </div>
+                  <p id="slug-hint" className={cn("mt-1.5 text-xs", slug && !slugValid ? "text-rose-700" : "text-ink-500")}>
+                    {slug && !slugValid ? "3–60 tekens: kleine letters, cijfers of streepjes (niet aan begin/eind)." : "Deze link kun je delen in een groepsapp of op je kaart."}
+                  </p>
+                </div>
+                <div className="mt-4 rounded-2xl border border-line bg-ivory p-3">
+                  <Toggle
+                    checked={site.published}
+                    onChange={(v) => save({ published: v })}
+                    label={site.published ? "Pagina is openbaar" : "Pagina publiceren"}
+                  />
+                </div>
+                {site.published && wedding.public_slug && (
+                  <div className="mt-3 flex gap-2">
+                    <Button size="sm" variant="secondary" className="flex-1" onClick={() => copy(`${origin}/uitnodiging/${wedding.public_slug}`)}>
+                      <Copy className="size-4" aria-hidden /> Kopieer
+                    </Button>
+                    <a
+                      href={`/uitnodiging/${wedding.public_slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3.5 text-sm font-medium hover:bg-rose-50"
+                    >
+                      <ExternalLink className="size-4" aria-hidden /> Open
+                    </a>
+                  </div>
+                )}
+                {dirty && slugValid && slug !== wedding.public_slug && (
+                  <p className="mt-3 truncate text-xs text-ink-500">Na opslaan: {publicUrl}</p>
+                )}
+              </>
+            )}
+          </section>
+
+          <section className="card p-6">
+            <div className="flex items-center gap-3">
+              <span className="grid size-10 place-items-center rounded-full bg-rose-50 text-rose-600">
+                <Link2 className="size-5" aria-hidden />
+              </span>
+              <h2 className="text-xl font-semibold">Persoonlijke links</h2>
+            </div>
+            <p className="mt-3 text-sm text-ink-700">
+              Iedere gast heeft een eigen link met hun naam, het juiste programma (dag of avond) en een RSVP-formulier. Die werkt ook als de algemene pagina offline staat.
+            </p>
+            <ButtonLink href="/dashboard/gasten" variant="secondary" size="sm" className="mt-4 w-full">
+              <Users className="size-4" aria-hidden /> Naar gasten ({guests.length})
+            </ButtonLink>
+          </section>
+
+          <section className="card p-6 text-sm text-ink-700">
+            <h2 className="text-xl font-semibold">Programma</h2>
+            <p className="mt-2">
+              Het programma komt uit jullie{" "}
+              <Link href="/dashboard/dagplanning" className="text-rose-700 hover:underline">
+                draaiboek
+              </Link>
+              . Per onderdeel kies je daar wie het ziet: iedereen, alleen daggasten, of alleen jullie.
+            </p>
+          </section>
+        </aside>
+      </div>
+
+      {/* Zwevende opslaan-balk bij wijzigingen */}
+      <AnimatePresence>
+        {dirty && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            className="fixed inset-x-4 bottom-20 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-full border border-line bg-white py-2 pr-2 pl-5 shadow-[var(--shadow-lift)] lg:bottom-6 lg:left-72"
+          >
+            <span className="text-sm text-ink-700">Niet-opgeslagen wijzigingen</span>
+            <Button size="sm" onClick={() => save()}>
+              Opslaan
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}

@@ -1,6 +1,7 @@
 import "server-only";
 import { createFalClient } from "@fal-ai/client";
 import { NextResponse } from "next/server";
+import { isEmailAllowed } from "./access";
 import { isSupabaseConfigured } from "./supabase/config";
 import { getSupabaseServer } from "./supabase/server";
 
@@ -30,6 +31,7 @@ export async function guard(req: Request): Promise<NextResponse | null> {
     const sb = await getSupabaseServer();
     const user = (await sb?.auth.getUser())?.data.user;
     if (!user) return NextResponse.json({ error: "Log eerst in." }, { status: 401 });
+    if (!isEmailAllowed(user.email)) return NextResponse.json({ error: "Geen toegang." }, { status: 403 });
     who = user.id;
   }
 
