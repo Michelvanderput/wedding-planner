@@ -270,7 +270,8 @@
 
   position: relative;
   isolation: isolate;
-  container-type: inline-size;
+  /* Let op: geen container-type hier; dat zou vaste (fixed) navigatie laten meescrollen.
+     De container-query zit op een binnenste laag (.@container). */
   background-color: var(--t-bg);
   color: var(--t-ink);
   font-family: var(--font-sans);

@@ -4,7 +4,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, ExternalLink, Eye, Globe, ImageIcon, Link2, Plus, Sparkles, Trash2, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { InvitationView } from "@/components/invitation/invitation-view";
+import { ThemeEditor } from "@/components/invitation/theme-editor";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { Segmented } from "@/components/ui/segmented";
+import { buildPreviewData, storeDraft, type PreviewAs } from "@/lib/invitation/preview";
+import { resolveTheme, type InvitationTheme } from "@/lib/invitation/theme";
 import { Input, Textarea, Toggle } from "@/components/ui/field";
 import { Badge, PageHeader } from "@/components/ui/misc";
 import { useToast } from "@/components/ui/toast";
@@ -12,12 +18,12 @@ import { aiText, useAiEnabled } from "@/lib/ai";
 import { useWedding } from "@/lib/store";
 import { SLUG_PATTERN as SLUG, isSlugAvailable, suggestFreeSlug } from "@/lib/invitation/slug";
 import { SITE_URL } from "@/lib/supabase/config";
-import type { FaqItem, SiteContent } from "@/lib/types";
+import type { FaqItem, InvitationData, SiteContent } from "@/lib/types";
 import { cn, coupleName, formatDate, slugify } from "@/lib/utils";
 
 
 export default function InvitationEditor() {
-  const { wedding, updateWedding, inspirations, guests, mode } = useWedding();
+  const { wedding, updateWedding, inspirations, guests, mode, timeline_events } = useWedding();
   const toast = useToast();
   const ai = useAiEnabled();
   const [site, setSite] = useState<SiteContent | null>(wedding?.site ?? null);
@@ -26,6 +32,14 @@ export default function InvitationEditor() {
   const [origin, setOrigin] = useState(SITE_URL);
   const [saving, setSaving] = useState(false);
   const [slugFree, setSlugFree] = useState<boolean | null>(null);
+  const [tab, setTab] = useState<"inhoud" | "vormgeving">("inhoud");
+  const [previewAs, setPreviewAs] = useState<PreviewAs>("day");
+  const [mobilePreview, setMobilePreview] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "vormgeving") setTab("vormgeving");
+  }, []);
 
   useEffect(() => {
     if (!SITE_URL) setOrigin(window.location.origin);
@@ -161,6 +175,15 @@ export default function InvitationEditor() {
   }
 
   const images = inspirations.filter((i) => i.image_url);
+  const theme = resolveTheme(site.theme);
+  const previewData = buildPreviewData(wedding, timeline_events, site, previewAs);
+
+  /** Voorbeeld openen mét nog niet opgeslagen wijzigingen. */
+  function openPreview() {
+    if (!wedding || !site) return;
+    storeDraft(wedding.id, site);
+    router.push(`/voorbeeld?als=${previewAs}`);
+  }
 
   return (
     <>
@@ -170,9 +193,9 @@ export default function InvitationEditor() {
         description="Een eigen pagina met alle informatie voor jullie gasten: programma, locatie, praktische zaken en RSVP."
         actions={
           <>
-            <ButtonLink href="/voorbeeld" variant="secondary">
+            <Button variant="secondary" onClick={openPreview}>
               <Eye className="size-4" aria-hidden /> Voorbeeld
-            </ButtonLink>
+            </Button>
             <Button onClick={() => save()} disabled={!dirty} loading={saving}>
               {dirty ? "Opslaan" : <><Check className="size-4" aria-hidden /> Opgeslagen</>}
             </Button>
@@ -180,6 +203,80 @@ export default function InvitationEditor() {
         }
       />
 
+      <div className="mb-6">
+        <Segmented
+          id="inv-tab"
+          value={tab}
+          onChange={setTab}
+          options={[
+            ["inhoud", "Inhoud"],
+            ["vormgeving", "Vormgeving"],
+          ]}
+        />
+      </div>
+
+      {tab === "vormgeving" && (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_400px]">
+          <div className="min-w-0">
+            <ThemeEditor
+              theme={theme}
+              onChange={(t) => set("theme", t)}
+              style={wedding.style}
+              names={[wedding.partner_one, wedding.partner_two]}
+              hasImage={!!site.hero_image}
+            />
+          </div>
+          <aside className="hidden lg:block">
+            <div className="sticky top-6">
+              <LivePreview data={previewData} theme={theme} as={previewAs} onAs={setPreviewAs} />
+            </div>
+          </aside>
+          <button
+            type="button"
+            onClick={() => setMobilePreview(true)}
+            className={cn(
+              "fixed left-1/2 z-30 inline-flex h-12 -translate-x-1/2 items-center gap-2 rounded-full bg-ink-900 px-5 text-sm font-medium text-ivory shadow-[var(--shadow-lift)] transition-[bottom] duration-300 lg:hidden",
+              dirty ? "bottom-[calc(9rem+env(safe-area-inset-bottom))]" : "bottom-[calc(5.25rem+env(safe-area-inset-bottom))]",
+            )}
+          >
+            <Eye className="size-4" aria-hidden /> Live voorbeeld
+          </button>
+          <AnimatePresence>
+            {mobilePreview && (
+              <motion.div
+                className="fixed inset-0 z-[95] flex flex-col bg-ink-900/60 backdrop-blur-sm lg:hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Live voorbeeld"
+              >
+                <div className="flex items-center gap-2 bg-white px-3 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-2">
+                  <Segmented
+                    id="prev-as-m"
+                    value={previewAs}
+                    onChange={setPreviewAs}
+                    options={[
+                      ["day", "Dag"],
+                      ["evening", "Avond"],
+                      ["public", "Openbaar"],
+                    ]}
+                  />
+                  <button onClick={() => setMobilePreview(false)} className="ml-auto grid size-11 place-items-center rounded-full hover:bg-rose-50" aria-label="Voorbeeld sluiten">
+                    <X className="size-5" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto overscroll-contain">
+                  <InvitationView data={previewData} themeOverride={theme} embedded rsvp={previewAs === "public" ? undefined : <RsvpPlaceholder />} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {tab === "inhoud" && (
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0 space-y-6">
           {/* Welkom */}
@@ -447,6 +544,8 @@ export default function InvitationEditor() {
         </aside>
       </div>
 
+      )}
+
       {/* Zwevende opslaan-balk bij wijzigingen */}
       <AnimatePresence>
         {dirty && (
@@ -464,5 +563,39 @@ export default function InvitationEditor() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+function RsvpPlaceholder() {
+  return (
+    <div className="card mx-auto max-w-lg p-6 text-center text-sm text-ink-500">
+      Hier vullen gasten hun RSVP in: komen ze, dieetwensen en +1.
+    </div>
+  );
+}
+
+/** Telefoonframe met de echte uitnodiging, live bijgewerkt tijdens het ontwerpen. */
+function LivePreview({ data, theme, as, onAs }: { data: InvitationData; theme: InvitationTheme; as: PreviewAs; onAs: (v: PreviewAs) => void }) {
+  return (
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <p className="text-sm font-medium text-ink-700">Live voorbeeld</p>
+        <Segmented
+          id="prev-as"
+          value={as}
+          onChange={onAs}
+          options={[
+            ["day", "Dag"],
+            ["evening", "Avond"],
+            ["public", "Openbaar"],
+          ]}
+        />
+      </div>
+      <div className="mx-auto w-[375px] max-w-full rounded-[2.75rem] border-[10px] border-ink-900 bg-ink-900 shadow-[var(--shadow-lift)]">
+        <div className="h-[calc(100dvh-11rem)] max-h-[760px] min-h-[520px] overflow-y-auto overscroll-contain rounded-[2rem] bg-white">
+          <InvitationView data={data} themeOverride={theme} embedded rsvp={as === "public" ? undefined : <RsvpPlaceholder />} />
+        </div>
+      </div>
+    </div>
   );
 }

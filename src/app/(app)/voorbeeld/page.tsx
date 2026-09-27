@@ -7,9 +7,8 @@ import { InvitationView } from "@/components/invitation/invitation-view";
 import { Segmented } from "@/components/ui/segmented";
 import { Spinner } from "@/components/ui/misc";
 import { useWedding } from "@/lib/store";
-import type { InvitationData } from "@/lib/types";
-
-type As = "public" | "day" | "evening";
+import { buildPreviewData, readDraft, type PreviewAs as As } from "@/lib/invitation/preview";
+import type { InvitationData, SiteContent } from "@/lib/types";
 
 /** Voorbeeld van de uitnodiging, opgebouwd uit de eigen (nog niet opgeslagen) gegevens. */
 export default function PreviewPage() {
@@ -21,25 +20,16 @@ export default function PreviewPage() {
     if (v === "public" || v === "day" || v === "evening") setAs(v);
   }, []);
 
-  const data = useMemo<InvitationData | null>(() => {
-    if (!wedding) return null;
-    const timeline = [...timeline_events]
-      .filter((e) => e.audience !== "private" && (as !== "evening" || e.audience === "all"))
-      .sort((a, b) => a.start_time.localeCompare(b.start_time))
-      .map(({ start_time, end_time, title, location, notes, audience }) => ({ start_time, end_time, title, location, notes, audience }));
-    return {
-      partner_one: wedding.partner_one,
-      partner_two: wedding.partner_two,
-      wedding_date: wedding.wedding_date,
-      ceremony_time: wedding.ceremony_time,
-      venue: wedding.venue,
-      city: wedding.city,
-      color_palette: wedding.color_palette,
-      site: wedding.site,
-      timeline,
-      guest: as === "public" ? undefined : { name: as === "day" ? "Anna de Vries" : "Daan Meijer", invited_to: as, rsvp: "pending", plus_one: false, dietary: "" },
-    };
-  }, [wedding, timeline_events, as]);
+  // Toon nog niet opgeslagen wijzigingen uit de editor, als die er zijn.
+  const [draft, setDraft] = useState<SiteContent | null>(null);
+  useEffect(() => {
+    if (wedding) setDraft(readDraft(wedding.id));
+  }, [wedding]);
+
+  const data = useMemo<InvitationData | null>(
+    () => (wedding ? buildPreviewData(wedding, timeline_events, draft ?? wedding.site, as) : null),
+    [wedding, timeline_events, draft, as],
+  );
 
   if (status !== "ready" || !data) return <Spinner label="Voorbeeld laden…" />;
 

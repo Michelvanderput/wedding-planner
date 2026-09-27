@@ -1,3 +1,5 @@
+import type { InvitationTheme } from "./invitation/theme";
+
 export type Priority = "low" | "medium" | "high";
 export type Side = "partner_one" | "partner_two" | "both";
 export type Rsvp = "pending" | "attending" | "declined";
@@ -25,6 +27,8 @@ export interface SiteContent {
   hero_image: string;
   rsvp_deadline: string; // yyyy-mm-dd
   faq: FaqItem[];
+  /** Vormgeving van de uitnodiging (zie lib/invitation/theme). Ontbrekend = standaardthema. */
+  theme?: Partial<InvitationTheme>;
 }
 
 export const defaultSite = (): SiteContent => ({

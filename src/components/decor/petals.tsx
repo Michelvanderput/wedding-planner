@@ -17,7 +17,7 @@ interface Petal {
 const HUES = ["#f5c7d6", "#eba0b8", "#fbe4ec", "#ecdcb6"];
 
 /** Zachtjes vallende rozenblaadjes – decoratief, uit bij reduced motion. */
-export function Petals({ count = 14 }: { count?: number }) {
+export function Petals({ count = 14, colors = HUES }: { count?: number; colors?: string[] }) {
   const reduce = useReducedMotion();
   const [petals, setPetals] = useState<Petal[]>([]);
 
@@ -31,10 +31,11 @@ export function Petals({ count = 14 }: { count?: number }) {
         duration: 12 + Math.random() * 10,
         drift: (Math.random() - 0.5) * 160,
         rotate: Math.random() * 360,
-        hue: HUES[i % HUES.length],
+        hue: colors[i % colors.length],
       })),
     );
-  }, [count]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [count, colors.join()]);
 
   // Container altijd renderen (gelijk aan server-HTML); blaadjes pas na mount.
   return (
