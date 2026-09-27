@@ -18,7 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Logo } from "@/components/decor/logo";
 import { useWedding } from "@/lib/store";
@@ -49,7 +49,6 @@ const isActive = (path: string, href: string) => (href === "/dashboard" ? path =
 
 export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
-  const router = useRouter();
   const { wedding, tasks, mode, email, signOut } = useWedding();
   const [open, setOpen] = useState(false);
 
@@ -60,8 +59,8 @@ export function Shell({ children }: { children: ReactNode }) {
 
   async function logout() {
     await signOut();
-    router.replace("/login");
-    router.refresh();
+    // Volledige navigatie: geen gecachte (ingelogde) pagina's hergebruiken.
+    window.location.assign("/login");
   }
 
   const nav = (

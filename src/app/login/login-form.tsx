@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Mail, MailCheck } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { Logo } from "@/components/decor/logo";
 import { Petals } from "@/components/decor/petals";
@@ -18,10 +18,14 @@ type Mode = "signin" | "signup" | "magic";
 
 export function LoginForm() {
   const sb = getSupabaseBrowser();
-  const router = useRouter();
   const params = useSearchParams();
   const toast = useToast();
-  const next = params.get("next") || "/dashboard";
+  const rawNext = params.get("next") || "/dashboard";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
+
+  /** Volledige navigatie: de nieuwe sessie-cookie gaat zeker mee en er wordt geen oude
+   *  (gecachte) doorverwijzing naar /login hergebruikt. */
+  const go = (url: string) => window.location.assign(url);
 
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
@@ -60,14 +64,13 @@ export function LoginForm() {
       } else if (mode === "signup") {
         const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo() } });
         if (error) throw error;
-        if (data.session) router.replace(next);
+        if (data.session) go(next);
         else setSent(true);
       } else {
         const { error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Welkom terug!");
-        router.replace(next);
-        router.refresh();
+        go(next);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
