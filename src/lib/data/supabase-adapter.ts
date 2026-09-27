@@ -13,8 +13,16 @@ function normalize<T>(row: T): T {
   return out as T;
 }
 
-function check(error: { message: string } | null) {
-  if (error) throw new Error(error.message);
+export const MISSING_SCHEMA =
+  "De database is nog niet ingericht. Voer supabase/migrations/20260927000000_init.sql uit in de Supabase SQL-editor.";
+
+/** Herkent "tabel/functie bestaat niet" (PostgREST-schemacache of Postgres zelf). */
+export const isMissingSchema = (e: { code?: string; message?: string }) =>
+  e.code === "PGRST205" || e.code === "PGRST202" || e.code === "42P01" || /could not find the (table|function)/i.test(e.message ?? "");
+
+function check(error: { message: string; code?: string } | null) {
+  if (!error) return;
+  throw new Error(isMissingSchema(error) ? MISSING_SCHEMA : error.message);
 }
 
 export function createSupabaseAdapter(sb: SupabaseClient): DataAdapter {

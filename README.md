@@ -93,7 +93,10 @@ De AI-routes zijn beschermd: in Supabase-modus alleen voor ingelogde gebruikers,
 
 ## Deployen naar Vercel
 
-1. Push deze repo naar GitHub en importeer hem in [Vercel](https://vercel.com/new). Het framework (Next.js) wordt automatisch herkend.
+1. Importeer de repo in [Vercel](https://vercel.com/new).
+   - **Root Directory:** `./` (de hoofdmap van de repo, niet `src` of `supabase`)
+   - **Framework Preset:** Next.js. `vercel.json` legt dit ook vast.
+   - **Node.js-versie:** 20 of hoger (Project Settings → General). Next.js 16 werkt niet op Node 18.
 2. Voeg bij **Settings → Environment Variables** toe:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -102,6 +105,20 @@ De AI-routes zijn beschermd: in Supabase-modus alleen voor ingelogde gebruikers,
 3. Deploy. Pas je later variabelen aan die met `NEXT_PUBLIC_` beginnen? Doe dan een redeploy, want die worden tijdens de build ingebakken.
 
 > Tip: gebruik je de Supabase-integratie in de Vercel Marketplace, dan worden de Supabase-variabelen automatisch gezet.
+> De app accepteert zowel `NEXT_PUBLIC_SUPABASE_URL` als `SUPABASE_URL`, en voor de key `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+> `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_ANON_KEY` of `SUPABASE_PUBLISHABLE_KEY`.
+
+### Controleren of alles werkt
+
+Open `https://<jouw-app>/api/status`. Je ziet dan bijvoorbeeld:
+
+```json
+{ "storage": "supabase", "database": "ok", "ai": "enabled" }
+```
+
+- `database: "missing_tables"` → de migratie is nog niet uitgevoerd (zie *Supabase koppelen*, stap 2)
+- `storage: "local"` → de Supabase-variabelen zijn niet gevonden; redeploy na het toevoegen ervan
+- `ai: "disabled"` → `FAL_KEY` ontbreekt
 
 ## Projectstructuur
 

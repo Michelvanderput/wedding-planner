@@ -12,6 +12,7 @@ type Status = "loading" | "ready" | "no-wedding" | "unauthenticated" | "error";
 
 interface StoreValue extends Collections {
   status: Status;
+  error: string | null;
   mode: "local" | "supabase";
   email: string | null;
   wedding: Wedding | null;
@@ -40,9 +41,11 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
   const [wedding, setWedding] = useState<Wedding | null>(null);
   const [collections, setCollections] = useState<Collections>(emptyCollections);
   const [email, setEmail] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     try {
+      setError(null);
       const res = await adapter.load();
       if (res.kind === "unauthenticated") {
         setStatus("unauthenticated");
@@ -54,6 +57,7 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
       setStatus(res.wedding ? "ready" : "no-wedding");
     } catch (e) {
       console.error(e);
+      setError(e instanceof Error ? e.message : String(e));
       setStatus("error");
     }
   }, [adapter]);
@@ -78,6 +82,7 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
     () => ({
       ...collections,
       status,
+      error,
       mode: adapter.mode,
       email,
       wedding,
@@ -125,7 +130,7 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
       },
       reload,
     }),
-    [adapter, collections, email, persist, reload, status, wedding],
+    [adapter, collections, email, error, persist, reload, status, wedding],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

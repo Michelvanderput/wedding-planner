@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, Heart, HardDriveUpload, PartyPopper } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { LoadError } from "@/components/dashboard/load-error";
 import { Logo } from "@/components/decor/logo";
 import { Petals } from "@/components/decor/petals";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ export default function OnboardingPage() {
     if (status === "unauthenticated") router.replace("/login?next=/onboarding");
   }, [status, router]);
 
+  if (status === "error") return <LoadError />;
   if (status === "loading" || status === "ready") return <Spinner />;
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));

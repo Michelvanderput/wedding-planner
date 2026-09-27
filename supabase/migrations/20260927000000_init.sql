@@ -3,7 +3,6 @@
 --  Draai dit in de Supabase SQL-editor of met `supabase db push`.
 -- ════════════════════════════════════════════════════════════════════
 
-create extension if not exists "pgcrypto";
 
 -- ── Bruiloften ──────────────────────────────────────────────────────
 create table if not exists public.weddings (

@@ -1,0 +1,6 @@
+# Supabase CLI / GitHub-integratie. Migraties staan in ./migrations.
+project_id = "wedding-planner"
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]
