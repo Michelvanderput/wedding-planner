@@ -219,10 +219,17 @@ export function InvitationView({ data, rsvp, banner }: Props) {
           <p className={cn("mt-6 text-sm tracking-[0.3em] uppercase", site.hero_image ? "text-white/90" : "text-ink-500")}>
             {guest ? `Lieve ${firstName}, je bent uitgenodigd` : "Wij gaan trouwen"}
           </p>
-          <h1 className={cn("mt-4 font-script text-6xl leading-[1.1] font-normal sm:text-8xl", site.hero_image ? "text-white drop-shadow-lg" : "text-rose-700")}>
-            {data.partner_one}
-            <span className={cn("mx-3 inline-block text-5xl sm:text-6xl", site.hero_image ? "text-gold-200" : "text-gold-500")}>&</span>
-            {data.partner_two}
+          {/* Op mobiel onder elkaar en meeschalend met de schermbreedte, zodat ook lange namen
+              (met hun krullen) altijd volledig in beeld blijven. */}
+          <h1
+            className={cn(
+              "mt-4 px-2 font-script text-[clamp(2.6rem,13.5vw,4.5rem)] leading-[1.12] font-normal sm:text-8xl sm:leading-[1.1]",
+              site.hero_image ? "text-white drop-shadow-lg" : "text-rose-700",
+            )}
+          >
+            <span className="block sm:inline">{data.partner_one}</span>
+            <span className={cn("block text-[0.72em] leading-[1.2] sm:mx-3 sm:inline-block sm:text-6xl", site.hero_image ? "text-gold-200" : "text-gold-500")}>&</span>
+            <span className="block sm:inline">{data.partner_two}</span>
           </h1>
           {data.wedding_date && (
             <p className={cn("mt-6 font-serif text-2xl sm:text-3xl", site.hero_image ? "text-white" : "text-ink-900")}>
@@ -395,7 +402,7 @@ export function InvitationView({ data, rsvp, banner }: Props) {
       )}
 
       <footer className="border-t border-line py-10 text-center">
-        <p className="font-script text-4xl text-rose-700">{couple}</p>
+        <p className="px-4 font-script text-[clamp(2rem,10vw,2.25rem)] text-rose-700">{couple}</p>
         {data.wedding_date && <p className="mt-1 text-sm text-ink-500">{formatDate(data.wedding_date)}</p>}
       </footer>
     </div>

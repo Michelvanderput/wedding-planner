@@ -95,7 +95,7 @@ export default function Overview() {
           <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <p className="text-ink-700">{greeting()},</p>
-              <h1 className="font-script text-5xl leading-tight text-rose-700 sm:text-6xl">
+              <h1 className="font-script text-[clamp(2.25rem,11vw,3rem)] leading-[1.15] text-rose-700 sm:text-6xl">
                 {coupleName(wedding.partner_one, wedding.partner_two)}
               </h1>
               <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-700">

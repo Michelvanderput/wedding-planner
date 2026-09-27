@@ -49,15 +49,15 @@ export default function PreviewPage() {
       <Link href="/dashboard/uitnodiging" className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-ink-700 hover:bg-rose-50">
         <ArrowLeft className="size-4" aria-hidden /> <span className="hidden sm:inline">Terug naar editor</span>
       </Link>
-      <span className="hidden text-sm text-ink-500 md:inline">Voorbeeld als:</span>
+      <span className="hidden text-sm text-ink-500 md:inline">Voorbeeld als gast:</span>
       <div className="ml-auto sm:ml-0">
         <Segmented
           id="preview-as"
           value={as}
           onChange={setAs}
           options={[
-            ["day", "Daggast"],
-            ["evening", "Avondgast"],
+            ["day", "Dag"],
+            ["evening", "Avond"],
             ["public", "Openbaar"],
           ]}
         />

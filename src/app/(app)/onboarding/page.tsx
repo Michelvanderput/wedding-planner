@@ -203,7 +203,7 @@ export default function OnboardingPage() {
                   </details>
                 )}
                 {form.partner_one && form.partner_two && (
-                  <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-10 text-center font-script text-5xl text-rose-600">
+                  <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-10 px-2 text-center font-script text-[clamp(2.25rem,11vw,3rem)] leading-tight text-rose-600">
                     {form.partner_one} & {form.partner_two}
                   </motion.p>
                 )}
