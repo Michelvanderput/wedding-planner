@@ -89,8 +89,8 @@ export default function BudgetPage() {
       />
 
       {/* Samenvatting */}
-      <div className="mb-6 grid gap-4 lg:grid-cols-[auto_1fr]">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card flex items-center gap-6 p-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[auto_1fr]">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card flex flex-wrap items-center justify-center gap-6 p-6 sm:justify-start">
           <ProgressRing value={budget ? t.actual / budget : 0} size={132} label={`${Math.round(budget ? (t.actual / budget) * 100 : 0)}% van het budget besteed`}>
             <div className="text-center">
               <div className="stat text-3xl">{Math.round(budget ? (t.actual / budget) * 100 : 0)}%</div>
@@ -134,7 +134,7 @@ export default function BudgetPage() {
           </div>
           <ul className="mt-5 space-y-3.5">
             {t.grouped.map((g, i) => (
-              <li key={g.cat} className="group grid items-center gap-2 sm:grid-cols-[180px_1fr_150px]">
+              <li key={g.cat} className="group grid grid-cols-1 items-center gap-2 sm:grid-cols-[180px_1fr_150px]">
                 <span className="text-sm text-ink-700">{g.cat}</span>
                 <div className="relative h-5" title={`${g.cat}: ${formatEuro(g.act)} besteed van ${formatEuro(g.est)} gepland`}>
                   <motion.div
@@ -225,7 +225,7 @@ export default function BudgetPage() {
           </>
         }
       >
-        <form className="grid gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save(); }}>
+        <form className="grid grid-cols-1 gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save(); }}>
           <Input className="sm:col-span-2" label="Omschrijving" required value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
           <Select label="Categorie" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} options={categories.map((c) => ({ value: c, label: c }))} />
           <Select
@@ -250,7 +250,7 @@ export default function BudgetPage() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setTotalOpen(false)}>Annuleren</Button>
-            <Button onClick={() => { updateWedding({ budget_total: Number(total) || 0 }); setTotalOpen(false); toast.success("Budget bijgewerkt"); }}>Opslaan</Button>
+            <Button onClick={async () => { setTotalOpen(false); if (await updateWedding({ budget_total: Number(total) || 0 })) toast.success("Budget bijgewerkt"); }}>Opslaan</Button>
           </>
         }
       >

@@ -256,7 +256,7 @@ export default function GuestsPage() {
       ) : list.length === 0 ? (
         <p className="py-16 text-center text-ink-500">Geen gasten gevonden met deze filters.</p>
       ) : (
-        <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           <AnimatePresence initial={false}>
             {list.map((g) => (
               <motion.li
@@ -282,7 +282,7 @@ export default function GuestsPage() {
                       {g.name}
                       {g.plus_one && <span className="ml-1 text-sm text-ink-500">+1</span>}
                     </p>
-                    <p className="truncate text-sm text-ink-500">
+                    <p className="line-clamp-2 text-sm text-ink-500">
                       {[INVITED_LABEL[g.invited_to], g.group_name, sideLabel[g.side]].filter(Boolean).join(" · ")}
                     </p>
                   </div>
@@ -346,7 +346,7 @@ export default function GuestsPage() {
           </>
         }
       >
-        <form className="grid gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save(); }}>
+        <form className="grid grid-cols-1 gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save(); }}>
           <Input className="sm:col-span-2" label="Naam" required value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
           <Input label="E-mail" type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
           <Input label="Telefoon" type="tel" value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} />
@@ -431,7 +431,7 @@ export default function GuestsPage() {
           </>
         }
       >
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Select label="Voor" value={inviteType} onChange={(e) => setInviteType(e.target.value as InvitedTo)} options={[{ value: "day", label: "Daggasten" }, { value: "evening", label: "Avondgasten" }]} />
           <Select
             label="Toon"

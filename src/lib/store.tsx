@@ -17,7 +17,8 @@ interface StoreValue extends Collections {
   email: string | null;
   wedding: Wedding | null;
   createWedding: (wedding: Wedding, seed: Partial<Collections>) => Promise<void>;
-  updateWedding: (patch: Partial<Wedding>) => void;
+  /** Optimistisch; resolvet naar false als opslaan mislukte (er is dan al een melding getoond). */
+  updateWedding: (patch: Partial<Wedding>) => Promise<boolean>;
   add: <K extends CollectionKey>(key: K, rows: RowOf<K> | RowOf<K>[]) => void;
   update: <K extends CollectionKey>(key: K, id: string, patch: Partial<RowOf<K>>) => void;
   remove: <K extends CollectionKey>(key: K, id: string) => void;
@@ -68,13 +69,16 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
 
   /** Optimistisch bijwerken; bij een fout melden en opnieuw synchroniseren. */
   const persist = useCallback(
-    (p: Promise<void>) => {
-      p.catch((e: unknown) => {
-        console.error(e);
-        toast.error("Opslaan mislukt", e instanceof Error ? e.message : undefined);
-        void reload();
-      });
-    },
+    (p: Promise<void>): Promise<boolean> =>
+      p.then(
+        () => true,
+        (e: unknown) => {
+          console.error(e);
+          toast.error("Opslaan mislukt", e instanceof Error ? e.message : undefined);
+          void reload();
+          return false;
+        },
+      ),
     [reload, toast],
   );
 
@@ -91,9 +95,9 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
         await reload();
       },
       updateWedding: (patch) => {
-        if (!wedding) return;
-        setWedding({ ...wedding, ...patch });
-        persist(adapter.updateWedding(wedding.id, patch));
+        if (!wedding) return Promise.resolve(false);
+        setWedding((w) => (w ? { ...w, ...patch } : w));
+        return persist(adapter.updateWedding(wedding.id, patch));
       },
       add: (key, rowOrRows) => {
         const rows = (Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows]) as RowOf<typeof key>[];

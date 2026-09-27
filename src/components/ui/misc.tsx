@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export const stagger: Variants = {
@@ -132,6 +132,7 @@ export function ProgressRing({
   children?: ReactNode;
 }) {
   const reduce = useReducedMotion();
+  const gradId = `ring-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const v = Math.max(0, Math.min(1, value));
@@ -139,7 +140,7 @@ export function ProgressRing({
     <div className="relative" style={{ width: size, height: size }} role="img" aria-label={label}>
       <svg width={size} height={size} className="-rotate-90">
         <defs>
-          <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="var(--color-rose-500)" />
             <stop offset="100%" stopColor="var(--color-gold-400)" />
           </linearGradient>
@@ -150,7 +151,7 @@ export function ProgressRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="url(#ring-grad)"
+          stroke={`url(#${gradId})`}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}

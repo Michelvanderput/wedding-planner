@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { LayoutGroup, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Copy, ExternalLink, Mail, Phone, Plus, Sparkles, Star, Store, Trash2, Wallet } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -154,6 +154,7 @@ export default function VendorsPage() {
       {vendors.length === 0 ? (
         <EmptyState icon={Store} title="Nog geen leveranciers" body="Houd hier fotografen, locaties, bloemisten en meer bij." action={<Button onClick={() => openNew()}>Eerste leverancier</Button>} />
       ) : (
+        <LayoutGroup>
         <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:px-0 lg:grid lg:grid-cols-4 lg:overflow-visible">
           {VENDOR_STATUS.map((col, ci) => {
             const items = vendors.filter((v) => v.status === col.value);
@@ -164,7 +165,6 @@ export default function VendorsPage() {
                   <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs font-medium text-ink-700">{items.length}</span>
                 </div>
                 <ul className="space-y-3">
-                  <AnimatePresence initial={false}>
                     {items.map((v) => (
                       <motion.li
                         key={v.id}
@@ -172,7 +172,6 @@ export default function VendorsPage() {
                         layoutId={v.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 350, damping: 30 }}
                         className="card p-4"
                       >
@@ -220,7 +219,6 @@ export default function VendorsPage() {
                         </div>
                       </motion.li>
                     ))}
-                  </AnimatePresence>
                 </ul>
                 <button onClick={() => openNew(col.value)} className="mt-3 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-ink-300/60 text-sm text-ink-500 transition hover:border-rose-300 hover:bg-white/60 hover:text-rose-700">
                   <Plus className="size-4" aria-hidden /> Toevoegen
@@ -229,6 +227,7 @@ export default function VendorsPage() {
             );
           })}
         </div>
+        </LayoutGroup>
       )}
 
       <Modal
@@ -253,7 +252,7 @@ export default function VendorsPage() {
           </>
         }
       >
-        <form className="grid gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save(); }}>
+        <form className="grid grid-cols-1 gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save(); }}>
           <Input label="Naam" required value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
           <Select label="Categorie" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} options={VENDOR_CATEGORIES.map((c) => ({ value: c, label: c }))} />
           <Select label="Status" value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value as VendorStatus })} options={VENDOR_STATUS} />

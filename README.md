@@ -6,12 +6,21 @@ Een moderne, Nederlandstalige webapp waarmee stellen hun bruiloft zelf plannen. 
 |---|---|
 | **Overzicht** | Live aftellen, voortgangsring, statistieken, eerstvolgende taken, RSVP en budget in één oogopslag |
 | **Takenlijst** | Complete checklist die terugrekent vanaf de trouwdatum, gegroepeerd per periode of categorie |
-| **Gasten** | Dag- en avondgasten, RSVP-status, +1, dieetwensen, lijst plakken, CSV-export, persoonlijke RSVP-links |
+| **Gasten** | Dag- en avondgasten, RSVP-status, +1, dieetwensen, **Excel-template + import/export**, persoonlijke uitnodigingslinks |
 | **Budget** | Automatische verdeling, gepland vs. besteed per categorie, betaalstatus, gekoppeld aan leveranciers |
 | **Leveranciers** | Pipeline-bord (Idee → Contact → Offerte → Geboekt), beoordelingen, direct naar budget |
-| **Draaiboek** | Tijdlijn van de grote dag, printbaar |
+| **Draaiboek** | Tijdlijn van de grote dag, printbaar; per onderdeel kiezen wie het op de uitnodiging ziet |
 | **Tafelschikking** | Gasten naar tafels slepen (of kiezen via menu), capaciteitscontrole, visuele tafels |
 | **Inspiratie** | Moodboard met AI-gegenereerde beelden in jullie stijl en kleuren |
+| **Uitnodiging** | Eigen uitnodigingswebsite voor gasten: programma, locatie + route, dresscode, cadeautip, FAQ, agenda-export en RSVP |
+| **Samen plannen** | Partner uitnodigen via een eenmalige link; maximaal twee beheerders per bruiloft |
+
+### Voor gasten
+
+- **Persoonlijke link** (`/rsvp/<token>`): uitnodiging met naam, het juiste programma (daggast ziet alles, avondgast alleen het avondprogramma) en een RSVP-formulier. Te delen via kopiëren of WhatsApp vanuit het gastenoverzicht.
+- **Algemene link** (`/uitnodiging/<naam>`): optioneel, alleen zichtbaar als jullie hem publiceren. Zonder RSVP en zonder persoonlijke gegevens.
+
+Gasten zien nooit het budget, andere gasten of leveranciers; dat wordt in de database afgedwongen.
 
 ### AI-versnellers (fal.ai)
 
@@ -56,8 +65,11 @@ Open http://localhost:3000.
 ## Supabase koppelen
 
 1. Maak een project aan op [supabase.com](https://supabase.com).
-2. Ga naar **SQL Editor**, plak de inhoud van [`supabase/migrations/20260927000000_init.sql`](supabase/migrations/20260927000000_init.sql) en klik op **Run**.
-   (Of gebruik de CLI: `supabase link --project-ref <ref>` en daarna `supabase db push`.)
+2. Ga naar **SQL Editor** en voer **op volgorde** uit (plakken → **Run**):
+   1. [`supabase/migrations/20260927000000_init.sql`](supabase/migrations/20260927000000_init.sql)
+   2. [`supabase/migrations/20260928000000_invitation_and_partner.sql`](supabase/migrations/20260928000000_invitation_and_partner.sql)
+
+   Beide scripts kun je veilig opnieuw draaien. (Of met de CLI: `supabase link --project-ref <ref>` en daarna `supabase db push`.)
 3. Kopieer uit **Project Settings → API** de *Project URL* en de *anon public key* naar:
    ```
    NEXT_PUBLIC_SUPABASE_URL=...
@@ -71,8 +83,21 @@ Open http://localhost:3000.
 Wat het schema regelt:
 - Tabellen voor bruiloften, taken, gasten, leveranciers, budget, draaiboek, tafels en inspiratie
 - **Row Level Security**: gebruikers zien alleen hun eigen bruiloft
-- `wedding_members`: klaar om later een partner of ceremoniemeester mee te laten plannen
-- `get_rsvp` / `submit_rsvp`: veilige functies waarmee gasten zonder account via hun persoonlijke link kunnen reageren (`/rsvp/<token>`)
+- **Samen plannen**: `wedding_members` met maximaal 2 personen; de partner komt er alleen bij via een eenmalige code van de eigenaar (`create_partner_invite` / `accept_partner_invite`), en eigenaarschap kan niet worden overgenomen
+- **Gasten zonder account**: `get_invitation`, `get_wedding_site` en `submit_rsvp` geven alleen de gegevens vrij die op de uitnodiging horen
+
+### Alleen het bruidspaar laten inloggen
+
+Standaard kan iedereen een account maken, maar ziet elk account alleen de eigen planning. Wil je dat verder niemand kan inloggen:
+
+1. Zet in Vercel `ALLOWED_EMAILS` met jullie twee e-mailadressen, gescheiden door een komma:
+   ```
+   ALLOWED_EMAILS=emma@voorbeeld.nl,lucas@voorbeeld.nl
+   ```
+   Andere accounts worden bij het inloggen direct geweigerd en uitgelogd.
+2. Maak jullie accounts aan en zet daarna in Supabase **Authentication → Providers → Email → Allow new users to sign up** uit.
+
+Gastpagina's (uitnodiging en RSVP) blijven gewoon werken.
 
 ## fal.ai koppelen
 
@@ -88,6 +113,15 @@ Optioneel kun je de modellen aanpassen:
 FAL_LLM_MODEL=google/gemini-2.5-flash     # via fal "openrouter/router"
 FAL_IMAGE_MODEL=fal-ai/flux/schnell
 ```
+
+## Gastenlijst via Excel
+
+Bij **Gasten → Excel import**:
+1. Download het template. Het heeft keuzelijsten voor *Uitgenodigd als*, *Kant*, *+1* en *RSVP*, en een tabblad met uitleg.
+2. Vul het in (Excel, Numbers, Google Sheets → downloaden als .xlsx) en upload het.
+3. Je ziet eerst een voorbeeld: nieuwe gasten, gasten die worden bijgewerkt (zelfde naam) en regels met fouten.
+
+Eigen bestanden werken ook: .xlsx of .csv, zolang er een kolom *Naam* in staat. Kolomnamen als *E-mail*, *Telefoon*, *Dieet*, *Type* en *Introducé* worden automatisch herkend. Met **Excel** (export) download je de huidige lijst in hetzelfde formaat, om aan te passen en opnieuw te uploaden.
 
 De AI-routes zijn beschermd: in Supabase-modus alleen voor ingelogde gebruikers, en altijd met een eenvoudige rate limit (40 verzoeken per 10 minuten per gebruiker of IP).
 

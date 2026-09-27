@@ -68,7 +68,7 @@ export default function Home() {
         <Sprig className="absolute top-10 -left-6 hidden h-72 text-sage-500 lg:block" />
         <Sprig className="absolute top-24 -right-4 hidden h-64 -scale-x-100 text-gold-400 lg:block" />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pt-14 pb-20 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:pt-20">
+        <div className="relative mx-auto grid grid-cols-1 max-w-6xl items-center gap-14 px-4 pt-14 pb-20 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:pt-20">
           <motion.div initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.12 } } }}>
             <motion.p variants={fade} className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white/70 px-3 py-1 text-sm text-rose-700">
               <Heart className="size-3.5 fill-rose-400 text-rose-400" aria-hidden /> Jullie bruiloft, helemaal zelf gepland
@@ -116,7 +116,7 @@ export default function Home() {
           whileInView="show"
           viewport={{ once: true, margin: "-60px" }}
           variants={{ show: { transition: { staggerChildren: 0.07 } } }}
-          className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
           {FEATURES.map((f) => (
             <motion.article
@@ -141,7 +141,7 @@ export default function Home() {
           <motion.h2 initial="hidden" whileInView="show" viewport={{ once: true }} variants={fade} className="text-center text-4xl font-semibold sm:text-5xl">
             In drie stappen op weg
           </motion.h2>
-          <div className="relative mt-14 grid gap-6 md:grid-cols-3">
+          <div className="relative mt-14 grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="absolute top-8 right-[16%] left-[16%] hidden h-px bg-gradient-to-r from-rose-200 via-gold-300 to-rose-200 md:block" aria-hidden />
             {STEPS.map((s, i) => (
               <motion.div

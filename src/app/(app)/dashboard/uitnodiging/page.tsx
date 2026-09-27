@@ -10,11 +10,11 @@ import { Badge, PageHeader } from "@/components/ui/misc";
 import { useToast } from "@/components/ui/toast";
 import { aiText, useAiEnabled } from "@/lib/ai";
 import { useWedding } from "@/lib/store";
+import { SLUG_PATTERN as SLUG, isSlugAvailable, suggestFreeSlug } from "@/lib/invitation/slug";
 import { SITE_URL } from "@/lib/supabase/config";
 import type { FaqItem, SiteContent } from "@/lib/types";
 import { cn, coupleName, formatDate, slugify } from "@/lib/utils";
 
-const SLUG = /^[a-z0-9]([a-z0-9-]{1,58})[a-z0-9]$/;
 
 export default function InvitationEditor() {
   const { wedding, updateWedding, inspirations, guests, mode } = useWedding();
@@ -24,14 +24,36 @@ export default function InvitationEditor() {
   const [slug, setSlug] = useState(wedding?.public_slug ?? "");
   const [aiBusy, setAiBusy] = useState<"welcome" | "faq" | null>(null);
   const [origin, setOrigin] = useState(SITE_URL);
+  const [saving, setSaving] = useState(false);
+  const [slugFree, setSlugFree] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!SITE_URL) setOrigin(window.location.origin);
   }, []);
 
+  // Standaardlink voorstellen die nog vrij is.
+  const weddingId = wedding?.id;
+  const hasSlug = !!wedding?.public_slug;
   useEffect(() => {
-    if (wedding && !wedding.public_slug && !slug) setSlug(slugify(`${wedding.partner_one} en ${wedding.partner_two}`));
-  }, [wedding, slug]);
+    if (!wedding || hasSlug) return;
+    const base = slugify(`${wedding.partner_one} en ${wedding.partner_two}`) || "onze-bruiloft";
+    let cancelled = false;
+    if (mode === "supabase") void suggestFreeSlug(base, wedding.id, wedding.wedding_date?.slice(0, 4)).then((s) => !cancelled && setSlug((cur) => cur || s));
+    else setSlug((cur) => cur || base);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weddingId, hasSlug, mode]);
+
+  // Beschikbaarheid live controleren (met kleine vertraging tijdens typen).
+  useEffect(() => {
+    setSlugFree(null);
+    if (!weddingId || mode !== "supabase" || !SLUG.test(slug) || slug === wedding?.public_slug) return;
+    const t = setTimeout(() => void isSlugAvailable(slug, weddingId).then(setSlugFree), 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, weddingId, mode]);
 
   const dirty = useMemo(
     () => !!wedding && !!site && (JSON.stringify(site) !== JSON.stringify(wedding.site) || (slug || null) !== wedding.public_slug),
@@ -52,16 +74,40 @@ export default function InvitationEditor() {
   const set = <K extends keyof SiteContent>(k: K, v: SiteContent[K]) => setSite({ ...site, [k]: v });
   const setFaq = (faq: FaqItem[]) => set("faq", faq);
 
-  function save(extra?: Partial<SiteContent>) {
-    if (!site) return;
-    if ((slug && !slugValid) || (extra?.published && !slugValid)) {
+  async function save(extra?: Partial<SiteContent>) {
+    if (!site || !wedding) return;
+    const slugChanged = (slug || null) !== wedding.public_slug;
+    if (slugChanged && slug && !slugValid) {
       toast.error("Controleer de link", "Gebruik 3–60 kleine letters, cijfers of streepjes.");
       return;
     }
-    const next = { ...site, ...extra, faq: site.faq.filter((f) => f.q.trim() || f.a.trim()) };
-    setSite(next);
-    updateWedding({ site: next, public_slug: slug || null });
-    toast.success(extra?.published === true ? "Uitnodiging gepubliceerd!" : extra?.published === false ? "Uitnodiging offline gehaald" : "Opgeslagen");
+    if (extra?.published && !slugValid) {
+      toast.error("Kies eerst een link", "Zonder link kan de pagina niet online.");
+      return;
+    }
+    setSaving(true);
+    try {
+      // 1. Link apart opslaan, zodat een bezette link nooit de inhoud blokkeert.
+      let slugOk = true;
+      if (slugChanged && mode === "supabase") {
+        const free = await isSlugAvailable(slug, wedding.id);
+        if (free === false) {
+          slugOk = false;
+          setSlugFree(false);
+          toast.error("Deze link is al in gebruik", "Kies een andere link. Je teksten worden wel opgeslagen.");
+        } else slugOk = await updateWedding({ public_slug: slug || null });
+      }
+      // 2. Inhoud opslaan (publiceren alleen als de link in orde is).
+      const publish = extra?.published === true && !slugOk ? {} : extra;
+      const next = { ...site, ...publish, faq: site.faq.filter((f) => f.q.trim() || f.a.trim()) };
+      setSite(next);
+      const siteOk = await updateWedding({ site: next });
+      if (siteOk && slugOk) {
+        toast.success(extra?.published === true ? "Uitnodiging gepubliceerd!" : extra?.published === false ? "Uitnodiging offline gehaald" : "Opgeslagen");
+      } else if (siteOk) toast.info("Teksten opgeslagen", "Alleen de link is nog niet aangepast.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function copy(text: string) {
@@ -127,14 +173,14 @@ export default function InvitationEditor() {
             <ButtonLink href="/voorbeeld" variant="secondary">
               <Eye className="size-4" aria-hidden /> Voorbeeld
             </ButtonLink>
-            <Button onClick={() => save()} disabled={!dirty}>
+            <Button onClick={() => save()} disabled={!dirty} loading={saving}>
               {dirty ? "Opslaan" : <><Check className="size-4" aria-hidden /> Opgeslagen</>}
             </Button>
           </>
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0 space-y-6">
           {/* Welkom */}
           <section className="card p-6">
@@ -180,7 +226,7 @@ export default function InvitationEditor() {
           <section className="card p-6">
             <h2 className="text-2xl font-semibold">Praktische info</h2>
             <p className="mt-1 text-sm text-ink-500">Lege velden worden niet getoond.</p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Textarea label="Dresscode" placeholder="Feestelijk, graag geen wit" value={site.dress_code} onChange={(e) => set("dress_code", e.target.value)} />
               <Textarea label="Cadeautip" placeholder="Een bijdrage voor onze huwelijksreis" value={site.gifts} onChange={(e) => set("gifts", e.target.value)} />
               <Textarea label="Parkeren & vervoer" placeholder="Gratis parkeren op het terrein" value={site.parking} onChange={(e) => set("parking", e.target.value)} />
@@ -242,7 +288,7 @@ export default function InvitationEditor() {
           {/* Contact & RSVP */}
           <section className="card p-6">
             <h2 className="text-2xl font-semibold">Contact & RSVP</h2>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input label="Ceremoniemeester" placeholder="Naam" value={site.contact_name} onChange={(e) => set("contact_name", e.target.value)} />
               <Input label="Telefoon ceremoniemeester" type="tel" placeholder="06 12345678" value={site.contact_phone} onChange={(e) => set("contact_phone", e.target.value)} />
               <Input label="Reageren vóór" type="date" value={site.rsvp_deadline} onChange={(e) => set("rsvp_deadline", e.target.value)} />
@@ -323,7 +369,7 @@ export default function InvitationEditor() {
                   <label htmlFor="slug" className="label">
                     Adres van jullie pagina
                   </label>
-                  <div className={cn("flex items-center overflow-hidden rounded-xl border bg-white focus-within:ring-4 focus-within:ring-rose-100", slug && !slugValid ? "border-rose-400" : "border-line")}>
+                  <div className={cn("flex items-center overflow-hidden rounded-xl border bg-white focus-within:ring-4 focus-within:ring-rose-100", (slug && !slugValid) || slugFree === false ? "border-rose-400" : "border-line")}>
                     <span className="shrink-0 bg-ivory px-3 py-2.5 text-sm text-ink-500">/uitnodiging/</span>
                     <input
                       id="slug"
@@ -334,8 +380,14 @@ export default function InvitationEditor() {
                       aria-describedby="slug-hint"
                     />
                   </div>
-                  <p id="slug-hint" className={cn("mt-1.5 text-xs", slug && !slugValid ? "text-rose-700" : "text-ink-500")}>
-                    {slug && !slugValid ? "3–60 tekens: kleine letters, cijfers of streepjes (niet aan begin/eind)." : "Deze link kun je delen in een groepsapp of op je kaart."}
+                  <p id="slug-hint" aria-live="polite" className={cn("mt-1.5 text-xs", (slug && !slugValid) || slugFree === false ? "text-rose-700" : slugFree ? "text-sage-700" : "text-ink-500")}>
+                    {slug && !slugValid
+                      ? "3–60 tekens: kleine letters, cijfers of streepjes (niet aan begin/eind)."
+                      : slugFree === false
+                        ? "Deze link is al in gebruik. Kies een andere."
+                        : slugFree
+                          ? "Deze link is nog vrij."
+                          : "Deze link kun je delen in een groepsapp of op je kaart."}
                   </p>
                 </div>
                 <div className="mt-4 rounded-2xl border border-line bg-ivory p-3">
@@ -405,7 +457,7 @@ export default function InvitationEditor() {
             className="fixed inset-x-4 bottom-20 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-full border border-line bg-white py-2 pr-2 pl-5 shadow-[var(--shadow-lift)] lg:bottom-6 lg:left-72"
           >
             <span className="text-sm text-ink-700">Niet-opgeslagen wijzigingen</span>
-            <Button size="sm" onClick={() => save()}>
+            <Button size="sm" onClick={() => save()} loading={saving}>
               Opslaan
             </Button>
           </motion.div>

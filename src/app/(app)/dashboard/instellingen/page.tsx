@@ -37,15 +37,15 @@ export default function SettingsPage() {
 
   if (!wedding) return null;
 
-  function save(e: FormEvent) {
+  async function save(e: FormEvent) {
     e.preventDefault();
-    updateWedding({
+    const ok = await updateWedding({
       ...form,
       wedding_date: form.wedding_date || null,
       ceremony_time: form.ceremony_time || null,
       guest_estimate: Number(form.guest_estimate) || 0,
     });
-    toast.success("Gegevens opgeslagen");
+    if (ok) toast.success("Gegevens opgeslagen");
   }
 
   function exportJson() {
@@ -78,11 +78,11 @@ export default function SettingsPage() {
     <>
       <PageHeader eyebrow="Alles op maat" title="Instellingen" />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0 space-y-6">
           <motion.form initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} onSubmit={save} className="card p-6">
             <h2 className="text-2xl font-semibold">Jullie bruiloft</h2>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input label="Partner 1" {...f("partner_one")} />
               <Input label="Partner 2" {...f("partner_two")} />
               <Input label="Trouwdatum" type="date" {...f("wedding_date")} />
@@ -99,7 +99,7 @@ export default function SettingsPage() {
           <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="card p-6">
             <h2 className="text-2xl font-semibold">Stijl & kleuren</h2>
             <p className="mt-1 text-sm text-ink-500">Wordt gebruikt voor het moodboard en AI-suggesties.</p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Stijl">
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Stijl">
               {WEDDING_STYLES.map((s) => {
                 const active = wedding.style === s.value;
                 return (

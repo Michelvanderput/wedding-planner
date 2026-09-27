@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { LayoutGroup, motion } from "framer-motion";
 import { Armchair, GripVertical, Pencil, Plus, Trash2, UserMinus, Users } from "lucide-react";
 import { useMemo, useState, type DragEvent } from "react";
 import { Button } from "@/components/ui/button";
@@ -83,7 +83,6 @@ export default function SeatingPage() {
       layoutId={`guest-${g.id}`}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: dragging === g.id ? 0.4 : 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
       transition={{ type: "spring", stiffness: 400, damping: 32 }}
     >
       <div
@@ -151,7 +150,8 @@ export default function SeatingPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+      <LayoutGroup>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
         {/* Nog niet geplaatst */}
         <section
           onDragOver={allowDrop("pool")}
@@ -170,7 +170,7 @@ export default function SeatingPage() {
             </p>
           ) : (
             <ul className="max-h-[60dvh] space-y-2 overflow-y-auto pr-1">
-              <AnimatePresence initial={false}>{unassigned.map((g) => chip(g))}</AnimatePresence>
+              {unassigned.map((g) => chip(g))}
             </ul>
           )}
         </section>
@@ -179,7 +179,7 @@ export default function SeatingPage() {
         {seating_tables.length === 0 ? (
           <EmptyState icon={Armchair} title="Nog geen tafels" body="Maak tafels aan en sleep je gasten erheen." action={<Button onClick={openNew}>Eerste tafel</Button>} />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {seating_tables.map((t) => {
               const list = byTable(t.id);
               const used = list.reduce((a, g) => a + seats(g), 0);
@@ -205,7 +205,7 @@ export default function SeatingPage() {
                     {used} / {t.capacity} plekken {full && "· vol"}
                   </p>
                   <ul className="min-h-12 space-y-1.5 rounded-xl border border-dashed border-transparent p-0.5 data-[empty=true]:border-line" data-empty={list.length === 0}>
-                    <AnimatePresence initial={false}>{list.map((g) => chip(g, true))}</AnimatePresence>
+                    {list.map((g) => chip(g, true))}
                     {list.length === 0 && <li className="py-3 text-center text-xs text-ink-500">Sleep gasten hierheen</li>}
                   </ul>
                 </motion.section>
@@ -214,6 +214,7 @@ export default function SeatingPage() {
           </div>
         )}
       </div>
+      </LayoutGroup>
 
       <Modal
         open={open}
@@ -231,7 +232,7 @@ export default function SeatingPage() {
           </>
         }
       >
-        <form className="grid gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save(); }}>
+        <form className="grid grid-cols-1 gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save(); }}>
           <Input className="sm:col-span-2" label="Naam" required value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
           <Input label="Aantal plekken" type="number" min={1} max={40} value={draft.capacity} onChange={(e) => setDraft({ ...draft, capacity: Number(e.target.value) })} />
           <Select label="Vorm" value={draft.shape} onChange={(e) => setDraft({ ...draft, shape: e.target.value as "round" | "rect" })} options={[{ value: "round", label: "Rond" }, { value: "rect", label: "Lang" }]} />

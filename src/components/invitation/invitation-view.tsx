@@ -203,8 +203,8 @@ export function InvitationView({ data, rsvp, banner }: Props) {
           </>
         ) : (
           <>
-            <Sprig className="absolute top-10 left-2 h-64 text-sage-500 opacity-70 sm:left-10 sm:h-80" />
-            <Sprig className="absolute right-2 bottom-24 h-56 -scale-x-100 text-gold-400 opacity-70 sm:right-10 sm:h-72" />
+            <Sprig className="absolute top-10 left-2 h-64 text-sage-500 opacity-30 sm:left-10 sm:h-80 sm:opacity-70" />
+            <Sprig className="absolute right-2 bottom-24 h-56 -scale-x-100 text-gold-400 opacity-30 sm:right-10 sm:h-72 sm:opacity-70" />
           </>
         )}
         <Petals count={14} />
@@ -341,7 +341,7 @@ export function InvitationView({ data, rsvp, banner }: Props) {
 
       {practical.length > 0 && (
         <Section id="praktisch" eyebrow="Goed om te weten" title="Praktische info">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {practical.map((p) => (
               <InfoCard key={p.key} icon={p.icon} title={p.title}>
                 {p.text}

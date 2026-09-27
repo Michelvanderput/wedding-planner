@@ -131,7 +131,7 @@ begin
   select * into v_inv from public.wedding_invites
    where code = upper(trim(p_code)) and used_by is null and expires_at > now();
   if not found then
-    raise exception 'Deze uitnodigingscode is ongeldig of verlopen' using errcode = 'P0002';
+    raise exception 'Deze uitnodigingscode is ongeldig of verlopen' using errcode = 'P0001';
   end if;
   if exists (select 1 from public.wedding_members where wedding_id = v_inv.wedding_id and user_id = auth.uid()) then
     return v_inv.wedding_id;
@@ -195,3 +195,13 @@ drop trigger if exists weddings_owner_immutable on public.weddings;
 create trigger weddings_owner_immutable
   before update on public.weddings
   for each row execute function public.prevent_owner_change();
+
+-- Is een uitnodigingslink nog vrij? (zonder andere bruiloften te kunnen zien)
+create or replace function public.slug_available(p_slug text, p_wedding uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select not exists (
+    select 1 from public.weddings where public_slug = lower(p_slug) and id <> p_wedding
+  );
+$$;
+revoke execute on function public.slug_available(text, uuid) from anon;
+grant execute on function public.slug_available(text, uuid) to authenticated;

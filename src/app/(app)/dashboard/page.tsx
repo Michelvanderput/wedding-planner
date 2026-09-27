@@ -89,7 +89,7 @@ export default function Overview() {
       <Rise>
         <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-rose-100 via-rose-50 to-gold-100 p-6 shadow-[var(--shadow-soft)] ring-1 ring-white sm:p-10">
           <div className="absolute -top-20 -right-10 size-72 rounded-full bg-white/40 blur-3xl" aria-hidden />
-          <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <p className="text-ink-700">{greeting()},</p>
               <h1 className="font-script text-5xl leading-tight text-rose-700 sm:text-6xl">
@@ -129,7 +129,7 @@ export default function Overview() {
       </Rise>
 
       {/* Statistieken */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((st) => (
           <Rise key={st.label}>
             <Link href={st.href} className="card group flex h-full flex-col gap-3 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)]">
@@ -149,7 +149,7 @@ export default function Overview() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         {/* Eerstvolgende taken */}
         <Rise className="lg:col-span-3">
           <section className="card h-full p-6">
@@ -231,7 +231,7 @@ export default function Overview() {
         </Rise>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         {/* Budget */}
         <Rise className="lg:col-span-2">
           <section className="card h-full p-6">

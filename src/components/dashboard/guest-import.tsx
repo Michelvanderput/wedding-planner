@@ -115,7 +115,7 @@ export function GuestImportModal({ open, onClose }: { open: boolean; onClose: ()
     >
       {!rows ? (
         <div className="space-y-5">
-          <ol className="grid gap-3 sm:grid-cols-2">
+          <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <li className="rounded-2xl border border-line bg-ivory/60 p-4">
               <p className="text-sm font-semibold text-ink-900">1. Download het template</p>
               <p className="mt-1 text-sm text-ink-500">Met keuzelijsten voor dag/avond, kant, +1 en RSVP.</p>

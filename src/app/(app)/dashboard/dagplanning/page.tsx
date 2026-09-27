@@ -196,7 +196,7 @@ export default function TimelinePage() {
           </>
         }
       >
-        <form className="grid gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save(); }}>
+        <form className="grid grid-cols-1 gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save(); }}>
           <Input className="sm:col-span-2" label="Wat gebeurt er?" required value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
           <Input label="Begintijd" type="time" required value={draft.start_time} onChange={(e) => setDraft({ ...draft, start_time: e.target.value })} />
           <Input label="Eindtijd" type="time" value={draft.end_time} onChange={(e) => setDraft({ ...draft, end_time: e.target.value })} />

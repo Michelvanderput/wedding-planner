@@ -171,7 +171,7 @@ export default function OnboardingPage() {
                 <p className="font-script text-3xl text-gold-600">Gefeliciteerd!</p>
                 <h1 className="text-4xl font-semibold sm:text-5xl">Wie gaan er trouwen?</h1>
                 <p className="mt-2 text-ink-500">We maken een persoonlijk plan op basis van jullie antwoorden.</p>
-                <div className="mt-8 grid items-end gap-4 sm:grid-cols-[1fr_auto_1fr]">
+                <div className="mt-8 grid grid-cols-1 items-end gap-4 sm:grid-cols-[1fr_auto_1fr]">
                   <Input label="Partner 1" placeholder="Emma" value={form.partner_one} onChange={(e) => set("partner_one", e.target.value)} autoFocus />
                   <Heart className="mx-auto mb-3 hidden size-6 fill-rose-300 text-rose-400 sm:block" aria-hidden />
                   <Input label="Partner 2" placeholder="Lucas" value={form.partner_two} onChange={(e) => set("partner_two", e.target.value)} />
@@ -214,7 +214,7 @@ export default function OnboardingPage() {
               <>
                 <h1 className="text-4xl font-semibold sm:text-5xl">Wanneer & waar?</h1>
                 <p className="mt-2 text-ink-500">De takenlijst rekent terug vanaf deze datum. Nog niet bekend? Geen probleem.</p>
-                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Input label="Trouwdatum" type="date" value={form.wedding_date} disabled={unknownDate} onChange={(e) => set("wedding_date", e.target.value)} />
                   <Input label="Tijd ceremonie" type="time" value={form.ceremony_time} onChange={(e) => set("ceremony_time", e.target.value)} />
                   <Input label="Locatie" placeholder="Bijv. Landgoed De Hoeve" value={form.venue} onChange={(e) => set("venue", e.target.value)} />
@@ -277,7 +277,7 @@ export default function OnboardingPage() {
               <>
                 <h1 className="text-4xl font-semibold sm:text-5xl">Welke sfeer past bij jullie?</h1>
                 <p className="mt-2 text-ink-500">Dit gebruiken we voor jullie moodboard en AI-suggesties.</p>
-                <div className="mt-8 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Stijl">
+                <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Stijl">
                   {WEDDING_STYLES.map((s) => {
                     const active = form.style === s.value;
                     return (
