@@ -1,4 +1,5 @@
 import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { haptic } from "@/lib/pwa/haptics";
 import { cn } from "@/lib/utils";
 
 interface Wrap {
@@ -79,7 +80,10 @@ export function Toggle({
         type="button"
         role="switch"
         aria-checked={checked}
-        onClick={() => onChange(!checked)}
+        onClick={() => {
+          haptic();
+          onChange(!checked);
+        }}
         className={cn(
           "relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200",
           checked ? "bg-rose-500" : "bg-ink-300/50",

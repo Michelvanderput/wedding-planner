@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Toggle } from "@/components/ui/field";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { haptic } from "@/lib/pwa/haptics";
 import type { InvitationData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +34,10 @@ export function RsvpForm({ token, guest, couple }: { token: string; guest: Guest
     });
     setSaving(false);
     if (error) setError("Opslaan lukte niet. Probeer het later opnieuw.");
-    else setDone(true);
+    else {
+      haptic([10, 50, 15]);
+      setDone(true);
+    }
   }
 
   return (

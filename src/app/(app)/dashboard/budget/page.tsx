@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, CheckCircle2, Circle, Pencil, Plus, Trash2, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CountUp } from "@/components/dashboard/widgets";
+import { Fab } from "@/components/ui/fab";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Toggle } from "@/components/ui/field";
 import { EmptyState, PageHeader, ProgressRing } from "@/components/ui/misc";
@@ -81,7 +82,7 @@ export default function BudgetPage() {
             <Button variant="secondary" onClick={() => { setTotal(String(budget)); setTotalOpen(true); }}>
               <Pencil className="size-4" aria-hidden /> Totaalbudget
             </Button>
-            <Button onClick={() => openNew()}>
+            <Button onClick={() => openNew()} className="max-sm:hidden">
               <Plus className="size-4" aria-hidden /> Post
             </Button>
           </>
@@ -256,6 +257,7 @@ export default function BudgetPage() {
       >
         <Input label="Totaalbudget (€)" type="number" inputMode="decimal" min={0} value={total} onChange={(e) => setTotal(e.target.value)} />
       </Modal>
+      <Fab label="Nieuwe post" icon={Plus} onClick={() => openNew()} />
     </>
   );
 }

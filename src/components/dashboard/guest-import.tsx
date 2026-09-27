@@ -184,7 +184,7 @@ export function GuestImportModal({ open, onClose }: { open: boolean; onClose: ()
             </div>
           )}
 
-          <div className="max-h-[42dvh] overflow-auto rounded-2xl border border-line">
+          <div className="max-h-[42dvh] overflow-auto overscroll-contain rounded-2xl border border-line">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead className="sticky top-0 bg-ivory text-xs text-ink-500">
                 <tr>

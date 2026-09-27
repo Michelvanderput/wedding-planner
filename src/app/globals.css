@@ -69,6 +69,61 @@
   html {
     -webkit-font-smoothing: antialiased;
     scroll-behavior: smooth;
+    /* Geen tekstvergroting bij draaien (iOS) */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Geen dubbeltik-zoom en geen 300ms tikvertraging; pinch-zoom blijft werken */
+    touch-action: manipulation;
+    /* Geen grijze/blauwe flits bij tikken */
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Knoppen, navigatie en labels voelen als app-bediening:
+     geen tekstselectie of kopieer-menu bij lang drukken of dubbeltikken. */
+  button,
+  [role="button"],
+  [role="tab"],
+  [role="radio"],
+  [role="switch"],
+  [role="checkbox"],
+  nav,
+  label,
+  summary,
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  /* Lang drukken op een link: geen iOS-voorbeeld/kopieer-menu */
+  a {
+    -webkit-touch-callout: none;
+  }
+  /* Invoervelden blijven gewoon selecteerbaar */
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  /* Afbeeldingen in de interface niet per ongeluk wegslepen */
+  img,
+  svg {
+    -webkit-user-drag: none;
+  }
+  /* iOS zoomt in op velden met tekst kleiner dan 16px: op touchscreens altijd ≥ 16px */
+  @media (pointer: coarse) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea {
+      font-size: max(16px, 1em) !important;
+    }
+  }
+  /* Geïnstalleerde app: geen stuiter-/pull-to-refresh-effect */
+  @media (display-mode: standalone) {
+    html,
+    body {
+      overscroll-behavior: none;
+    }
   }
   body {
     @apply bg-ivory font-sans text-ink-900;
@@ -122,6 +177,19 @@
   /* Cijfers: DM Sans met tabulaire, rechte cijfers (Cormorant-subset heeft geen lnum) */
   .stat {
     @apply font-sans font-semibold tracking-tight tabular-nums;
+  }
+  /* Horizontaal scrollbare rijen (filters, pills) zonder zichtbare scrollbalk */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
   }
   .text-gradient {
     @apply bg-gradient-to-r from-rose-600 via-rose-500 to-gold-500 bg-clip-text text-transparent;

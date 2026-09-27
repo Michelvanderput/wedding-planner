@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Check, Cloud, Download, HardDrive, Sparkles, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState, type FormEvent } from "react";
+import { InstallCard } from "@/components/dashboard/install-card";
 import { PartnerCard } from "@/components/dashboard/partner-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
@@ -126,6 +127,7 @@ export default function SettingsPage() {
 
         <div className="min-w-0 space-y-6">
           <PartnerCard onRole={onRole} />
+          <InstallCard />
           <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card p-6">
             <h2 className="text-xl font-semibold">Status</h2>
             <ul className="mt-4 space-y-4 text-sm">

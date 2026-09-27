@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Copy, Download, ExternalLink, FileSpreadsheet, Link2, Mail, Send, Pencil, Plus, Search, Sparkles, Trash2, UserPlus, Users, Utensils } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { GuestImportModal } from "@/components/dashboard/guest-import";
+import { Fab } from "@/components/ui/fab";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea, Toggle } from "@/components/ui/field";
 import { Badge, EmptyState, PageHeader } from "@/components/ui/misc";
@@ -186,7 +187,7 @@ export default function GuestsPage() {
             <Button variant="secondary" onClick={() => setBulkOpen(true)}>
               <UserPlus className="size-4" aria-hidden /> Snel toevoegen
             </Button>
-            <Button onClick={openNew}>
+            <Button onClick={openNew} className="max-sm:hidden">
               <Plus className="size-4" aria-hidden /> Gast
             </Button>
           </>
@@ -458,6 +459,7 @@ export default function GuestsPage() {
           </p>
         )}
       </Modal>
+      <Fab label="Nieuwe gast" icon={Plus} onClick={openNew} />
     </>
   );
 }

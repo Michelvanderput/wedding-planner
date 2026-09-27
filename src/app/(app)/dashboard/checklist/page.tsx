@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ListChecks, Pencil, Plus, Search, Sparkles, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Fab } from "@/components/ui/fab";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/field";
 import { Badge, Bar, EmptyState, PageHeader } from "@/components/ui/misc";
@@ -11,6 +12,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/ui/toast";
 import { aiText, useAiEnabled } from "@/lib/ai";
 import { PRIORITY_LABEL, TASK_CATEGORIES } from "@/lib/defaults";
+import { haptic } from "@/lib/pwa/haptics";
 import { useWedding } from "@/lib/store";
 import type { Priority, Task } from "@/lib/types";
 import { addMonths, cn, coupleName, daysUntil, formatDate, formatDateShort, nowIso, parseDate, toDateInput, uid } from "@/lib/utils";
@@ -95,6 +97,7 @@ export default function ChecklistPage() {
   }
 
   function toggle(t: Task) {
+    haptic(t.done ? 6 : [8, 40, 12]);
     update("tasks", t.id, { done: !t.done });
     if (!t.done) {
       const left = tasks.length - done - 1;
@@ -168,7 +171,7 @@ export default function ChecklistPage() {
                 <Sparkles className="size-4 text-gold-600" aria-hidden /> AI-suggesties
               </Button>
             )}
-            <Button onClick={openNew}>
+            <Button onClick={openNew} className="max-sm:hidden">
               <Plus className="size-4" aria-hidden /> Nieuwe taak
             </Button>
           </>
@@ -361,6 +364,7 @@ export default function ChecklistPage() {
           </ul>
         )}
       </Modal>
+      <Fab label="Nieuwe taak" icon={Plus} onClick={openNew} />
     </>
   );
 }

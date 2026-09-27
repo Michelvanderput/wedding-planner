@@ -60,7 +60,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
   return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center sm:p-6">
+        <div className="fixed inset-0 z-[90] flex items-end justify-center pt-safe sm:items-center sm:p-6">
           <motion.div
             className="absolute inset-0 bg-ink-900/30 backdrop-blur-[3px]"
             initial={{ opacity: 0 }}
@@ -97,7 +97,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
                 <X className="size-5" />
               </button>
             </div>
-            <div className="overflow-y-auto px-6 py-5">{children}</div>
+            <div className="overflow-y-auto overscroll-contain px-6 py-5">{children}</div>
             {footer && (
               <div className="flex flex-wrap justify-end gap-2 border-t border-line bg-ivory/60 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
                 {footer}

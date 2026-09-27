@@ -454,7 +454,7 @@ export default function InvitationEditor() {
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
-            className="fixed inset-x-4 bottom-20 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-full border border-line bg-white py-2 pr-2 pl-5 shadow-[var(--shadow-lift)] lg:bottom-6 lg:left-72"
+            className="fixed inset-x-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-full border border-line bg-white py-2 pr-2 pl-5 shadow-[var(--shadow-lift)] lg:bottom-6 lg:left-72"
           >
             <span className="text-sm text-ink-700">Niet-opgeslagen wijzigingen</span>
             <Button size="sm" onClick={() => save()} loading={saving}>

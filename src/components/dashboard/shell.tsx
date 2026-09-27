@@ -138,7 +138,8 @@ export function Shell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobiele topbar */}
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line/70 bg-ivory/80 px-4 backdrop-blur-xl lg:hidden">
+      <header className="sticky top-0 z-30 border-b border-line/70 bg-ivory/80 pt-safe backdrop-blur-xl lg:hidden">
+        <div className="flex h-16 items-center justify-between px-4">
         <Logo href="/dashboard" />
         <button
           onClick={() => setOpen(true)}
@@ -148,6 +149,7 @@ export function Shell({ children }: { children: ReactNode }) {
         >
           <Menu className="size-5" />
         </button>
+        </div>
       </header>
 
       {/* Mobiele drawer */}
@@ -162,7 +164,7 @@ export function Shell({ children }: { children: ReactNode }) {
               onClick={() => setOpen(false)}
             />
             <motion.aside
-              className="absolute inset-y-0 right-0 flex w-[85%] max-w-xs flex-col bg-ivory px-5 py-5 shadow-[var(--shadow-lift)]"
+              className="absolute inset-y-0 right-0 flex w-[85%] max-w-xs flex-col bg-ivory px-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[var(--shadow-lift)]"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%", transition: { duration: 0.2 } }}
@@ -177,14 +179,14 @@ export function Shell({ children }: { children: ReactNode }) {
                   <X className="size-5" />
                 </button>
               </div>
-              <div className="overflow-y-auto">{nav}</div>
+              <div className="overflow-y-auto overscroll-contain">{nav}</div>
               {footer}
             </motion.aside>
           </div>
         )}
       </AnimatePresence>
 
-      <main className="px-4 pt-6 pb-28 sm:px-6 lg:ml-72 lg:px-10 lg:pt-10 lg:pb-16">
+      <main className="px-4 pt-6 pb-[calc(9.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:ml-72 lg:px-10 lg:pt-10 lg:pb-16">
         <div className="mx-auto max-w-6xl">{children}</div>
       </main>
 

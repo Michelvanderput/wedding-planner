@@ -3,6 +3,7 @@
 import { LayoutGroup, motion } from "framer-motion";
 import { Armchair, GripVertical, Pencil, Plus, Trash2, UserMinus, Users } from "lucide-react";
 import { useMemo, useState, type DragEvent } from "react";
+import { Fab } from "@/components/ui/fab";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
 import { EmptyState, PageHeader } from "@/components/ui/misc";
@@ -131,7 +132,7 @@ export default function SeatingPage() {
         title="Tafelschikking"
         description="Sleep daggasten naar een tafel, of kies een tafel via het menu. Afmeldingen worden automatisch overgeslagen."
         actions={
-          <Button onClick={openNew}>
+          <Button onClick={openNew} className="max-sm:hidden">
             <Plus className="size-4" aria-hidden /> Tafel
           </Button>
         }
@@ -169,7 +170,7 @@ export default function SeatingPage() {
               {seatable.length ? "Iedereen heeft een plekje!" : "Voeg eerst daggasten toe."}
             </p>
           ) : (
-            <ul className="max-h-[60dvh] space-y-2 overflow-y-auto pr-1">
+            <ul className="max-h-[60dvh] space-y-2 overflow-y-auto overscroll-contain pr-1">
               {unassigned.map((g) => chip(g))}
             </ul>
           )}
@@ -239,6 +240,7 @@ export default function SeatingPage() {
           <button type="submit" hidden />
         </form>
       </Modal>
+      <Fab label="Nieuwe tafel" icon={Plus} onClick={openNew} />
     </>
   );
 }

@@ -3,6 +3,7 @@
 import { LayoutGroup, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Copy, ExternalLink, Mail, Phone, Plus, Sparkles, Star, Store, Trash2, Wallet } from "lucide-react";
 import { useState } from "react";
+import { Fab } from "@/components/ui/fab";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/field";
 import { Badge, EmptyState, PageHeader } from "@/components/ui/misc";
@@ -145,7 +146,7 @@ export default function VendorsPage() {
         title="Leveranciers"
         description="Van eerste idee tot geboekt. Verplaats kaarten als er iets verandert."
         actions={
-          <Button onClick={() => openNew()}>
+          <Button onClick={() => openNew()} className="max-sm:hidden">
             <Plus className="size-4" aria-hidden /> Leverancier
           </Button>
         }
@@ -155,7 +156,7 @@ export default function VendorsPage() {
         <EmptyState icon={Store} title="Nog geen leveranciers" body="Houd hier fotografen, locaties, bloemisten en meer bij." action={<Button onClick={() => openNew()}>Eerste leverancier</Button>} />
       ) : (
         <LayoutGroup>
-        <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:px-0 lg:grid lg:grid-cols-4 lg:overflow-visible">
+        <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-4 pb-4 sm:mx-0 sm:px-0 lg:grid lg:grid-cols-4 lg:overflow-visible">
           {VENDOR_STATUS.map((col, ci) => {
             const items = vendors.filter((v) => v.status === col.value);
             return (
@@ -330,6 +331,7 @@ export default function VendorsPage() {
           </motion.div>
         )}
       </Modal>
+      <Fab label="Nieuwe leverancier" icon={Plus} onClick={() => openNew()} />
     </>
   );
 }

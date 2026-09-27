@@ -44,7 +44,8 @@ export default function PreviewPage() {
   if (status !== "ready" || !data) return <Spinner label="Voorbeeld laden…" />;
 
   const banner = (
-    <div className="fixed inset-x-0 top-0 z-50 flex h-14 items-center gap-3 border-b border-line bg-white/95 px-3 backdrop-blur sm:px-6">
+    <div className="fixed inset-x-0 top-0 z-50 border-b border-line bg-white/95 pt-safe backdrop-blur">
+      <div className="flex h-14 items-center gap-3 px-3 sm:px-6">
       <Link href="/dashboard/uitnodiging" className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-ink-700 hover:bg-rose-50">
         <ArrowLeft className="size-4" aria-hidden /> <span className="hidden sm:inline">Terug naar editor</span>
       </Link>
@@ -61,11 +62,12 @@ export default function PreviewPage() {
           ]}
         />
       </div>
+      </div>
     </div>
   );
 
   return (
-    <div className="pt-14">
+    <div className="pt-[calc(3.5rem+env(safe-area-inset-top))]">
       <InvitationView
         data={data}
         banner={banner}

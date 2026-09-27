@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Clock, MapPin, Plus, Printer, Sparkles, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Fab } from "@/components/ui/fab";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/field";
 import { Badge, EmptyState, PageHeader } from "@/components/ui/misc";
@@ -112,7 +113,7 @@ export default function TimelinePage() {
                 <Sparkles className="size-4 text-gold-600" aria-hidden /> Genereer met AI
               </Button>
             )}
-            <Button onClick={openNew}>
+            <Button onClick={openNew} className="max-sm:hidden">
               <Plus className="size-4" aria-hidden /> Onderdeel
             </Button>
           </>
@@ -233,6 +234,7 @@ export default function TimelinePage() {
           </div>
         )}
       </Modal>
+      <Fab label="Nieuw onderdeel" icon={Plus} onClick={openNew} />
     </>
   );
 }

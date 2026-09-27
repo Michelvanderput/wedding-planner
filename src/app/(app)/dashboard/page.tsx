@@ -4,8 +4,10 @@ import { motion } from "framer-motion";
 import { AlertCircle, ArrowUpRight, CalendarDays, Check, ListChecks, MapPin, Store, Users, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
+import { InstallCard } from "@/components/dashboard/install-card";
 import { AiCoach, CountUp, Countdown } from "@/components/dashboard/widgets";
 import { Badge, Bar, ProgressRing, Rise, Stagger } from "@/components/ui/misc";
+import { haptic } from "@/lib/pwa/haptics";
 import { useWedding } from "@/lib/store";
 import { cn, coupleName, daysUntil, formatDate, formatDateShort, formatEuro } from "@/lib/utils";
 
@@ -85,6 +87,7 @@ export default function Overview() {
 
   return (
     <Stagger className="space-y-6">
+      <InstallCard compact />
       {/* Hero */}
       <Rise>
         <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-rose-100 via-rose-50 to-gold-100 p-6 shadow-[var(--shadow-soft)] ring-1 ring-white sm:p-10">
@@ -169,7 +172,10 @@ export default function Overview() {
                   return (
                     <motion.li key={t.id} layout className="flex items-center gap-3 py-3">
                       <button
-                        onClick={() => update("tasks", t.id, { done: true })}
+                        onClick={() => {
+                          haptic();
+                          update("tasks", t.id, { done: true });
+                        }}
                         className="group grid size-11 shrink-0 place-items-center rounded-full"
                         aria-label={`Markeer "${t.title}" als klaar`}
                       >

@@ -177,11 +177,11 @@ export function InvitationView({ data, rsvp, banner }: Props) {
           aria-label="Onderdelen"
           className={cn(
             "fixed inset-x-0 z-40 flex justify-center px-3 transition-all duration-300",
-            banner ? "top-14" : "top-3",
+            banner ? "top-[calc(3.5rem+env(safe-area-inset-top))]" : "top-[calc(0.75rem+env(safe-area-inset-top))]",
             scrolled ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-4 opacity-0",
           )}
         >
-          <ul className="flex max-w-full gap-1 overflow-x-auto rounded-full border border-line bg-white/90 p-1 shadow-[var(--shadow-soft)] backdrop-blur-md">
+          <ul className="no-scrollbar flex max-w-full gap-1 overflow-x-auto overscroll-x-contain rounded-full border border-line bg-white/90 p-1 shadow-[var(--shadow-soft)] backdrop-blur-md">
             {nav.map(([id, label]) => (
               <li key={id}>
                 <a href={`#${id}`} className="block rounded-full px-3.5 py-2 text-sm whitespace-nowrap text-ink-700 transition hover:bg-rose-50 hover:text-rose-700">
