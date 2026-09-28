@@ -17,6 +17,8 @@ export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || in
 /** True zodra Supabase-omgevingsvariabelen zijn ingesteld. */
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
+// Basisadres voor gedeelde links. Bewust NIET de unieke deployment-URL (VERCEL_URL): die zit
+// standaard achter Vercel-login, waardoor gasten de uitnodiging niet zouden kunnen openen.
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "");
+  (process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}` : "");
