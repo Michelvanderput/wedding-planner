@@ -19,12 +19,19 @@ export function Modal({ open, onClose, title, description, children, footer, siz
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
+  // onClose is vaak een inline functie (elke render nieuw). Via een ref hoeft het effect
+  // daardoor niet opnieuw te draaien bij elke toetsaanslag; anders sprong de focus steeds
+  // terug naar het eerste veld.
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
     lastFocus.current = document.activeElement as HTMLElement;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") closeRef.current();
       if (e.key === "Tab" && panel.current) {
         const els = panel.current.querySelectorAll<HTMLElement>(
           'a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])',
@@ -53,7 +60,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
       document.body.style.overflow = prev;
       lastFocus.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (typeof document === "undefined") return null;
 
