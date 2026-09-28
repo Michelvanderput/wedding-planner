@@ -1,46 +1,11 @@
 import type { NextConfig } from "next";
 
-/**
- * Supabase-integraties gebruiken verschillende namen, soms met een voorvoegsel
- * (bijv. STORAGE_SUPABASE_URL via de Vercel Marketplace). We zoeken de URL en de
- * publieke sleutel op en maken ze beschikbaar onder één naam.
- *
- * Veiligheid: alleen een publieke sleutel (anon / sb_publishable_) mag naar de browser.
- * Een service_role- of sb_secret_-sleutel wordt hier altijd geweigerd.
- */
-function isPublicKey(v: string) {
-  if (v.startsWith("sb_publishable_")) return true;
-  if (v.startsWith("sb_secret_")) return false;
-  const parts = v.split(".");
-  if (parts.length !== 3) return false;
-  try {
-    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")) as { role?: string };
-    return payload.role === "anon";
-  } catch {
-    return false;
-  }
-}
+import { findSupabaseEnv } from "./src/lib/supabase/env";
 
-function find(patterns: RegExp[], accept: (v: string) => boolean = () => true) {
-  for (const re of patterns) {
-    for (const [k, v] of Object.entries(process.env)) {
-      if (v && re.test(k) && accept(v.trim())) return v.trim();
-    }
-  }
-  return "";
-}
-
-const supabaseUrl = find([/^NEXT_PUBLIC_SUPABASE_URL$/, /^SUPABASE_URL$/, /(^|_)SUPABASE_URL$/], (v) => /^https?:\/\//.test(v));
-const supabaseKey = find(
-  [
-    /^NEXT_PUBLIC_SUPABASE_ANON_KEY$/,
-    /^NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY$/,
-    /^SUPABASE_ANON_KEY$/,
-    /^SUPABASE_PUBLISHABLE_KEY$/,
-    /(^|_)SUPABASE_(ANON|PUBLISHABLE)_KEY$/,
-  ],
-  isPublicKey,
-);
+// Supabase-URL en publieke sleutel opzoeken (ook met voorvoegsel, bijv. STORAGE_SUPABASE_URL).
+// Een service_role- of sb_secret_-sleutel wordt altijd geweigerd. Ontbreken ze tijdens de
+// build, dan vult de server ze tijdens runtime alsnog in (zie src/lib/supabase/config.ts).
+const { url: supabaseUrl, key: supabaseKey } = findSupabaseEnv(process.env);
 
 const nextConfig: NextConfig = {
   env: {

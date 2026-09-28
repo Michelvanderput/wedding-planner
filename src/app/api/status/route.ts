@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isAiConfigured } from "@/lib/ai-server";
 import { isMissingSchema } from "@/lib/data/supabase-adapter";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { findSupabaseEnv } from "@/lib/supabase/env";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -28,11 +29,12 @@ export async function GET() {
     }
   }
 
-  // Runtime-omgeving: welke Supabase-variabelen bestaan er NU (alleen namen)?
-  const runtimeNames = Object.keys(process.env)
-    .filter((k) => /SUPABASE/i.test(k) && !/SERVICE_ROLE|SECRET|JWT|PASSWORD/i.test(k))
-    .sort();
-  const runtimeHas = runtimeNames.some((k) => /SUPABASE_URL$/.test(k)) && runtimeNames.some((k) => /(ANON|PUBLISHABLE)_KEY$/.test(k));
+  // Diagnose: alleen NAMEN en het soort waarde, nooit de waarden zelf.
+  const found = findSupabaseEnv(process.env);
+  const buildHad = Boolean(process.env.NEXT_PUBLIC_BUILD_HAD_SUPABASE);
+  const badKey = found.report.key.find((k) => k.kind === "secret" || k.kind === "service_role");
+  const unknownKey = found.report.key.find((k) => k.kind === "unknown");
+  const badUrl = found.report.url.find((u) => !u.valid);
 
   let advice: string;
   if (isSupabaseConfigured) {
@@ -40,26 +42,37 @@ export async function GET() {
       database === "ok"
         ? "Alles is gekoppeld."
         : database === "missing_tables"
-          ? "Supabase is gekoppeld, maar de tabellen ontbreken. Voer de SQL-bestanden in supabase/migrations/ op volgorde uit."
+          ? "Supabase is gekoppeld, maar de tabellen ontbreken. Voer de SQL-bestanden in supabase/migrations/ op volgorde uit in de Supabase SQL-editor."
           : database === "missing_features"
             ? "Supabase werkt, maar de nieuwste migratie (20260929000000_features.sql) is nog niet uitgevoerd."
-            : "Supabase is ingesteld maar geeft een fout; zie 'detail'.";
-  } else if (runtimeHas) {
-    advice = "De Supabase-variabelen zijn er nu wel, maar waren er nog niet tijdens de laatste build. Doe een nieuwe deploy (Redeploy) in Vercel.";
-  } else if (runtimeNames.length) {
-    advice = `Er zijn Supabase-variabelen gevonden (${runtimeNames.join(", ")}), maar geen URL + publieke (anon/publishable) sleutel.`;
+            : "Supabase is ingesteld maar geeft een fout; zie 'detail'. Klopt de URL bij de sleutel (zelfde project)?";
+  } else if (badKey && !found.key) {
+    advice = `${badKey.name} bevat een geheime sleutel (${badKey.kind}). Gebruik de publieke 'anon'- of 'sb_publishable_'-sleutel uit Supabase → Project Settings → API Keys.`;
+  } else if (unknownKey && !found.key) {
+    advice = `${unknownKey.name} lijkt geen Supabase-sleutel. Plak de 'anon public'- of 'sb_publishable_…'-sleutel uit Supabase → Project Settings → API Keys (zonder aanhalingstekens of spaties).`;
+  } else if (badUrl && !found.url) {
+    advice = `${badUrl.name} is geen geldige URL. Gebruik de Project URL uit Supabase, bijv. https://abcd1234.supabase.co`;
+  } else if (!found.report.url.length || !found.report.key.length) {
+    advice = `Mis ${!found.report.url.length ? "SUPABASE_URL" : "SUPABASE_ANON_KEY"}. Voeg die toe in Vercel → Settings → Environment Variables (voor Production) en doe een Redeploy.`;
   } else {
-    advice = "Geen Supabase-variabelen gevonden. Koppel Supabase in Vercel (Settings → Environment Variables of de Supabase-integratie) en deploy opnieuw.";
+    advice = "De variabelen zijn gevonden; doe een Redeploy zodat de nieuwe versie van de app ze oppakt.";
   }
 
+  const falRaw = process.env.FAL_KEY;
   return NextResponse.json({
     storage: isSupabaseConfigured ? "supabase" : "local",
     database,
     ...(detail ? { detail } : {}),
     ai: isAiConfigured ? "enabled" : "disabled",
     supabase_env: {
-      build_had_supabase: Boolean(process.env.NEXT_PUBLIC_BUILD_HAD_SUPABASE),
-      runtime_variables: runtimeNames,
+      build_had_supabase: buildHad,
+      url: found.report.url,
+      key: found.report.key,
+    },
+    ai_env: { FAL_KEY: falRaw === undefined ? "missing" : falRaw.trim() ? "present" : "empty" },
+    deployment: {
+      env: process.env.VERCEL_ENV ?? null,
+      commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
     },
     advice,
   });

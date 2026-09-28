@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans, Great_Vibes } from "next/font/google";
+import { connection } from "next/server";
 import { Providers } from "@/components/providers";
+import { findSupabaseEnv } from "@/lib/supabase/env";
 import "./globals.css";
 
 const sans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });
@@ -33,9 +35,25 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Had de build de Supabase-gegevens niet (bijv. pas later toegevoegd in Vercel)? Dan lezen
+  // we ze per verzoek uit de runtime-omgeving en geven we de publieke waarden aan de browser.
+  let runtimeSb: { url: string; key: string } | null = null;
+  if (!process.env.NEXT_PUBLIC_BUILD_HAD_SUPABASE) {
+    await connection();
+    const { url, key } = findSupabaseEnv(process.env);
+    if (url && key) runtimeSb = { url, key };
+  }
   return (
     <html lang="nl" className={`${sans.variable} ${serif.variable} ${script.variable}`}>
+      <head>
+        {runtimeSb && (
+          <script
+            // Alleen de publieke URL en anon/publishable-sleutel; nooit een geheime sleutel.
+            dangerouslySetInnerHTML={{ __html: `window.__WP_SB__=${JSON.stringify(runtimeSb).replace(/</g, "\\u003c")}` }}
+          />
+        )}
+      </head>
       <body className="min-h-dvh">
         <Providers>{children}</Providers>
       </body>

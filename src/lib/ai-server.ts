@@ -5,7 +5,7 @@ import { isEmailAllowed } from "./access";
 import { isSupabaseConfigured } from "./supabase/config";
 import { getSupabaseServer } from "./supabase/server";
 
-export const FAL_KEY = process.env.FAL_KEY ?? "";
+export const FAL_KEY = (process.env.FAL_KEY ?? "").trim().replace(/^["']|["']$/g, "");
 export const isAiConfigured = Boolean(FAL_KEY);
 export const LLM_MODEL = process.env.FAL_LLM_MODEL || "google/gemini-2.5-flash";
 export const IMAGE_MODEL = process.env.FAL_IMAGE_MODEL || "fal-ai/flux/schnell";
