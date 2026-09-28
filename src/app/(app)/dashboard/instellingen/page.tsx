@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Check, Cloud, Download, HardDrive, Sparkles, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { InstallCard } from "@/components/dashboard/install-card";
 import { PartnerCard } from "@/components/dashboard/partner-card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,13 @@ export default function SettingsPage() {
   const [confirm, setConfirm] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [role, setRole] = useState<"owner" | "editor" | null>(null);
+  const [health, setHealth] = useState<{ advice: string } | null>(null);
+  useEffect(() => {
+    fetch("/api/status")
+      .then((r) => r.json())
+      .then(setHealth)
+      .catch(() => setHealth(null));
+  }, []);
   const onRole = useCallback((r: "owner" | "editor" | null) => setRole(r), []);
   const [form, setForm] = useState(() => ({
     partner_one: wedding?.partner_one ?? "",
@@ -142,6 +149,14 @@ export default function SettingsPage() {
                       ? `Veilig opgeslagen in jullie account${email ? ` (${email})` : ""}.`
                       : "Gegevens staan in deze browser. Koppel Supabase om te synchroniseren tussen apparaten."}
                   </p>
+                  {health && health.advice !== "Alles is gekoppeld." && (
+                    <p role="status" className="mt-2 rounded-xl bg-gold-50 px-3 py-2 text-xs text-ink-700">
+                      {health.advice}{" "}
+                      <a href="/api/status" target="_blank" rel="noreferrer" className="text-rose-700 underline-offset-2 hover:underline">
+                        Details
+                      </a>
+                    </p>
+                  )}
                 </div>
               </li>
               <li className="flex items-start gap-3">
