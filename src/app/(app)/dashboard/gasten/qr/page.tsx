@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/misc";
 import { QrCode } from "@/components/ui/qr";
 import { useWedding } from "@/lib/store";
-import { SITE_URL } from "@/lib/supabase/config";
+import { SITE_URL, publicOrigin } from "@/lib/supabase/config";
 import { INVITED_LABEL } from "@/lib/defaults";
 import { QrCode as QrIcon } from "lucide-react";
 
@@ -16,7 +16,7 @@ export default function GuestQrCards() {
   const { guests, wedding, mode } = useWedding();
   const [origin, setOrigin] = useState(SITE_URL);
   useEffect(() => {
-    if (!SITE_URL) setOrigin(window.location.origin);
+    setOrigin(publicOrigin());
   }, []);
   const sorted = [...guests].sort((a, b) => a.name.localeCompare(b.name, "nl"));
 

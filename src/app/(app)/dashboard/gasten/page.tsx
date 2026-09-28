@@ -19,7 +19,7 @@ import { aiText, useAiEnabled } from "@/lib/ai";
 import { buildGuestWorkbook, downloadBlob } from "@/lib/guest-excel";
 import { INVITED_LABEL, RSVP_LABEL } from "@/lib/defaults";
 import { useWedding } from "@/lib/store";
-import { SITE_URL } from "@/lib/supabase/config";
+import { publicOrigin } from "@/lib/supabase/config";
 import type { Guest, InvitedTo, Rsvp, Side } from "@/lib/types";
 import { cn, coupleName, formatDate, initials, nowIso, slugify, uid } from "@/lib/utils";
 
@@ -138,7 +138,7 @@ export default function GuestsPage() {
   }
 
   function rsvpLink(g: Guest) {
-    return `${SITE_URL || window.location.origin}/rsvp/${g.rsvp_token}`;
+    return `${publicOrigin()}/rsvp/${g.rsvp_token}`;
   }
 
   async function copy(text: string, msg: string) {

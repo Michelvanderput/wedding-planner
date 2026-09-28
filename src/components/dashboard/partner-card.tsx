@@ -9,7 +9,7 @@ import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { createPartnerInvite, getMembers, removeMember, type Member } from "@/lib/partner";
 import { useWedding } from "@/lib/store";
-import { SITE_URL } from "@/lib/supabase/config";
+import { publicOrigin } from "@/lib/supabase/config";
 
 /** "Samen plannen": partner uitnodigen, leden beheren. Alleen in Supabase-modus. */
 export function PartnerCard({ onRole }: { onRole?: (role: Member["role"] | null) => void }) {
@@ -49,7 +49,7 @@ export function PartnerCard({ onRole }: { onRole?: (role: Member["role"] | null)
   const me = members?.find((m) => m.is_me);
   const isOwner = me?.role === "owner";
   const full = (members?.length ?? 0) >= 2;
-  const link = code ? `${SITE_URL || (typeof window !== "undefined" ? window.location.origin : "")}/partner/${code}` : "";
+  const link = code ? `${publicOrigin()}/partner/${code}` : "";
 
   async function invite() {
     if (!wedding) return;

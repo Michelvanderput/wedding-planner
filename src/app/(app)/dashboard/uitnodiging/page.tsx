@@ -19,7 +19,7 @@ import { useToast } from "@/components/ui/toast";
 import { aiText, useAiEnabled } from "@/lib/ai";
 import { useWedding } from "@/lib/store";
 import { SLUG_PATTERN as SLUG, isSlugAvailable, suggestFreeSlug } from "@/lib/invitation/slug";
-import { SITE_URL } from "@/lib/supabase/config";
+import { SITE_URL, publicOrigin } from "@/lib/supabase/config";
 import type { FaqItem, InvitationData, SiteContent } from "@/lib/types";
 import { cn, coupleName, formatDate, slugify } from "@/lib/utils";
 
@@ -44,7 +44,7 @@ export default function InvitationEditor() {
   }, []);
 
   useEffect(() => {
-    if (!SITE_URL) setOrigin(window.location.origin);
+    setOrigin(publicOrigin());
   }, []);
 
   // Standaardlink voorstellen die nog vrij is.

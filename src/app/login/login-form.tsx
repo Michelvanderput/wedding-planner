@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
-import { SITE_URL } from "@/lib/supabase/config";
+import { publicOrigin } from "@/lib/supabase/config";
 import { cn } from "@/lib/utils";
 
 type Mode = "signin" | "signup" | "magic";
@@ -49,7 +49,7 @@ export function LoginForm() {
   }, [errParam, sb]);
 
   const redirectTo = () =>
-    `${SITE_URL || window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+    `${publicOrigin()}/auth/callback?next=${encodeURIComponent(next)}`;
 
   async function submit(e: FormEvent) {
     e.preventDefault();

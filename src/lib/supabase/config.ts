@@ -22,3 +22,16 @@ export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   (process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}` : "");
+
+const isLocal = (u: string) => /^https?:\/\/(localhost|127\.|0\.0\.0\.0|\[::1\])/i.test(u);
+
+/**
+ * Het adres waarop gasten en e-maillinks moeten uitkomen. Een ingestelde SITE_URL wint,
+ * behalve als die naar localhost wijst terwijl de app live draait (bijv. een vergeten
+ * NEXT_PUBLIC_SITE_URL uit .env.example): dan het adres waarop de app nu echt draait.
+ */
+export function publicOrigin(): string {
+  const here = typeof window !== "undefined" ? window.location.origin : "";
+  if (SITE_URL && !(isLocal(SITE_URL) && here && !isLocal(here))) return SITE_URL.replace(/\/+$/, "");
+  return here || SITE_URL;
+}
