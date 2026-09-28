@@ -38,6 +38,15 @@ const COLUMN_TONE: Record<VendorStatus, string> = {
   booked: "from-sage-200/80",
 };
 
+const DOT: Record<VendorStatus, string> = {
+  idea: "bg-ink-300",
+  contacted: "bg-gold-400",
+  quote: "bg-rose-400",
+  booked: "bg-sage-500",
+};
+
+const SHORT: Record<VendorStatus, string> = { idea: "Idee", contacted: "Contact", quote: "Offerte", booked: "Geboekt" };
+
 const BUDGET_FOR: Record<string, string> = {
   Locatie: "Locatie & catering",
   Catering: "Locatie & catering",
@@ -63,6 +72,7 @@ export default function VendorsPage() {
   const [wishes, setWishes] = useState("");
   const [mail, setMail] = useState("");
   const [mailLoading, setMailLoading] = useState(false);
+  const [phase, setPhase] = useState<VendorStatus | "all">("all");
 
   function openNew(status?: VendorStatus) {
     setEditing(null);
@@ -153,6 +163,79 @@ export default function VendorsPage() {
     return m ? { subject: m[1].trim(), body: m[2].trim() } : { subject: "Offerteaanvraag bruiloft", body: mail };
   })();
 
+  function renderCard(v: Vendor, ci: number, desktop: boolean) {
+    const next = VENDOR_STATUS[ci + 1];
+    return (
+      <motion.li
+        key={v.id}
+        layout
+        layoutId={desktop ? v.id : undefined}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+        className="card min-w-0 p-4"
+      >
+        <button onClick={() => openEdit(v)} className="block w-full min-w-0 text-left">
+          <div className="flex items-start justify-between gap-3">
+            <p className="min-w-0 font-medium break-words">{v.name}</p>
+            {v.price !== null && <span className="shrink-0 text-sm font-medium text-ink-700 tabular-nums">{formatEuro(v.price)}</span>}
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <Badge tone="ink">{v.category}</Badge>
+            {v.rating && (
+              <span className="flex items-center gap-0.5" aria-label={`${v.rating} van 5 sterren`}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className={cn("size-3", i < v.rating! ? "fill-gold-400 text-gold-400" : "text-ink-300")} aria-hidden />
+                ))}
+              </span>
+            )}
+          </div>
+          {v.notes && <p className="mt-2 line-clamp-2 text-sm text-ink-500">{v.notes}</p>}
+        </button>
+        {/* Voortgang door de fases */}
+        <div className="mt-3 flex gap-1" aria-hidden>
+          {VENDOR_STATUS.map((s, i) => (
+            <span key={s.value} className={cn("h-1 flex-1 rounded-full", i <= ci ? DOT[VENDOR_STATUS[ci].value] : "bg-ivory-deep")} />
+          ))}
+        </div>
+        <div className="mt-2 flex items-center gap-1">
+          <button onClick={() => move(v, -1)} disabled={ci === 0} className="grid size-9 shrink-0 place-items-center rounded-full text-ink-500 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-30" aria-label={`${v.name} naar vorige fase`}>
+            <ChevronLeft className="size-4" />
+          </button>
+          {desktop ? (
+            <button onClick={() => move(v, 1)} disabled={!next} className="grid size-9 place-items-center rounded-full text-ink-500 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-30" aria-label={`${v.name} naar volgende fase`}>
+              <ChevronRight className="size-4" />
+            </button>
+          ) : next ? (
+            <button onClick={() => move(v, 1)} className="flex h-9 min-w-0 items-center gap-1 rounded-full bg-rose-50 px-3 text-sm font-medium text-rose-700 ring-1 ring-rose-100 hover:bg-rose-100" aria-label={`${v.name} naar ${next.label}`}>
+              <span className="truncate">{next.value === "booked" ? "Markeer geboekt" : `Naar ${SHORT[next.value].toLowerCase()}`}</span>
+              <ChevronRight className="size-4 shrink-0" aria-hidden />
+            </button>
+          ) : (
+            <span className="flex h-9 items-center gap-1 px-2 text-sm font-medium text-sage-700">Geboekt ✓</span>
+          )}
+          <div className="ml-auto flex shrink-0 gap-1">
+            {v.phone && (
+              <a href={`tel:${v.phone}`} className="grid size-9 place-items-center rounded-full text-ink-500 hover:bg-rose-50 hover:text-rose-700" aria-label={`Bel ${v.name}`}>
+                <Phone className="size-4" />
+              </a>
+            )}
+            {ai !== false && (
+              <button
+                onClick={() => { setMailFor(v); setMail(""); setWishes(""); }}
+                className="grid size-9 place-items-center rounded-full text-gold-600 hover:bg-gold-50"
+                aria-label={`Schrijf offerte-mail aan ${v.name}`}
+                title="Offerte-mail schrijven"
+              >
+                <Sparkles className="size-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </motion.li>
+    );
+  }
+
   return (
     <>
       <PageHeader
@@ -169,80 +252,86 @@ export default function VendorsPage() {
       {vendors.length === 0 ? (
         <EmptyState icon={Store} title="Nog geen leveranciers" body="Houd hier fotografen, locaties, bloemisten en meer bij." action={<Button onClick={() => openNew()}>Eerste leverancier</Button>} />
       ) : (
-        <LayoutGroup>
-        <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-4 pb-4 sm:mx-0 sm:px-0 lg:grid lg:grid-cols-4 lg:overflow-visible">
-          {VENDOR_STATUS.map((col, ci) => {
-            const items = vendors.filter((v) => v.status === col.value);
-            return (
-              <section key={col.value} className={cn("w-[80vw] max-w-sm shrink-0 snap-start rounded-3xl bg-gradient-to-b to-transparent p-3 sm:w-80 lg:w-auto lg:max-w-none", COLUMN_TONE[col.value])} aria-label={col.label}>
-                <div className="mb-3 flex items-center justify-between px-2 pt-1">
-                  <h2 className="font-serif text-xl font-semibold">{col.label}</h2>
-                  <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs font-medium text-ink-700">{items.length}</span>
-                </div>
-                <ul className="space-y-3">
-                    {items.map((v) => (
-                      <motion.li
-                        key={v.id}
-                        layout
-                        layoutId={v.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                        className="card p-4"
-                      >
-                        <button onClick={() => openEdit(v)} className="block w-full text-left">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="font-medium">{v.name}</p>
-                            {v.price !== null && <span className="text-sm font-medium text-ink-700 tabular-nums">{formatEuro(v.price)}</span>}
-                          </div>
-                          <div className="mt-1 flex flex-wrap items-center gap-2">
-                            <Badge tone="ink">{v.category}</Badge>
-                            {v.rating && (
-                              <span className="flex items-center gap-0.5" aria-label={`${v.rating} van 5 sterren`}>
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star key={i} className={cn("size-3", i < v.rating! ? "fill-gold-400 text-gold-400" : "text-ink-300")} aria-hidden />
-                                ))}
-                              </span>
-                            )}
-                          </div>
-                          {v.notes && <p className="mt-2 line-clamp-2 text-sm text-ink-500">{v.notes}</p>}
-                        </button>
-                        <div className="mt-3 flex items-center gap-1 border-t border-line pt-2">
-                          <button onClick={() => move(v, -1)} disabled={ci === 0} className="grid size-9 place-items-center rounded-full text-ink-500 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-30" aria-label={`${v.name} naar vorige fase`}>
-                            <ChevronLeft className="size-4" />
-                          </button>
-                          <button onClick={() => move(v, 1)} disabled={ci === VENDOR_STATUS.length - 1} className="grid size-9 place-items-center rounded-full text-ink-500 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-30" aria-label={`${v.name} naar volgende fase`}>
-                            <ChevronRight className="size-4" />
-                          </button>
-                          <div className="ml-auto flex gap-1">
-                            {v.phone && (
-                              <a href={`tel:${v.phone}`} className="grid size-9 place-items-center rounded-full text-ink-500 hover:bg-rose-50 hover:text-rose-700" aria-label={`Bel ${v.name}`}>
-                                <Phone className="size-4" />
-                              </a>
-                            )}
-                            {ai !== false && (
-                              <button
-                                onClick={() => { setMailFor(v); setMail(""); setWishes(""); }}
-                                className="grid size-9 place-items-center rounded-full text-gold-600 hover:bg-gold-50"
-                                aria-label={`Schrijf offerte-mail aan ${v.name}`}
-                                title="Offerte-mail schrijven"
-                              >
-                                <Sparkles className="size-4" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </motion.li>
-                    ))}
-                </ul>
-                <button onClick={() => openNew(col.value)} className="mt-3 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-ink-300/60 text-sm text-ink-500 transition hover:border-rose-300 hover:bg-white/60 hover:text-rose-700">
-                  <Plus className="size-4" aria-hidden /> Toevoegen
-                </button>
-              </section>
-            );
-          })}
-        </div>
-        </LayoutGroup>
+        <>
+          {/* Mobiel en tablet: pijplijn-overzicht (tik = filter) + één verticale lijst per fase */}
+          <div className="lg:hidden">
+            <div className="grid grid-cols-4 gap-2" role="group" aria-label="Filter op fase">
+              {VENDOR_STATUS.map((col, ci) => {
+                const n = vendors.filter((v) => v.status === col.value).length;
+                const active = phase === col.value;
+                return (
+                  <button
+                    key={col.value}
+                    onClick={() => setPhase(active ? "all" : col.value)}
+                    aria-pressed={active}
+                    className={cn(
+                      "relative min-w-0 rounded-2xl px-1 py-2.5 text-center ring-1 transition",
+                      active ? "bg-rose-600 text-white ring-rose-600 shadow-[var(--shadow-glow)]" : "bg-white ring-line",
+                    )}
+                  >
+                    <span className="stat block text-xl leading-6">{n}</span>
+                    <span className={cn("block truncate text-[11px]", active ? "text-white/90" : "text-ink-500")}>{SHORT[col.value]}</span>
+                    {ci < VENDOR_STATUS.length - 1 && (
+                      <ChevronRight className="absolute top-1/2 -right-2 z-10 size-3 -translate-y-1/2 text-ink-300" aria-hidden />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-center text-xs text-ink-500">
+              {phase === "all" ? "Tik op een fase om alleen die leveranciers te zien." : (
+                <button onClick={() => setPhase("all")} className="font-medium text-rose-700 underline-offset-2 hover:underline">Toon alle fases</button>
+              )}
+            </p>
+
+            <div className="mt-5 space-y-7">
+              {VENDOR_STATUS.map((col, ci) => {
+                if (phase !== "all" && phase !== col.value) return null;
+                const items = vendors.filter((v) => v.status === col.value);
+                if (phase === "all" && items.length === 0) return null;
+                return (
+                  <section key={col.value} aria-label={col.label}>
+                    <div className="mb-2.5 flex items-center gap-2 px-1">
+                      <span className={cn("size-2.5 shrink-0 rounded-full", DOT[col.value])} aria-hidden />
+                      <h2 className="min-w-0 truncate font-serif text-xl font-semibold">
+                        {col.label} <span className="font-sans text-sm font-normal text-ink-500">· {items.length}</span>
+                      </h2>
+                      <button onClick={() => openNew(col.value)} className="ml-auto flex min-h-11 shrink-0 items-center gap-1 rounded-full px-3 text-sm font-medium text-rose-700 hover:bg-rose-50" aria-label={`Leverancier toevoegen aan ${col.label}`}>
+                        <Plus className="size-4" aria-hidden /> <span className="max-[359px]:sr-only">Toevoegen</span>
+                      </button>
+                    </div>
+                    {items.length === 0 ? (
+                      <p className="rounded-2xl border border-dashed border-ink-300/60 px-4 py-6 text-center text-sm text-ink-500">Nog geen leveranciers in deze fase.</p>
+                    ) : (
+                      <ul className="space-y-3">{items.map((v) => renderCard(v, ci, false))}</ul>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Desktop: kanban met vier kolommen */}
+          <LayoutGroup>
+            <div className="hidden grid-cols-4 gap-4 lg:grid">
+              {VENDOR_STATUS.map((col, ci) => {
+                const items = vendors.filter((v) => v.status === col.value);
+                return (
+                  <section key={col.value} className={cn("min-w-0 rounded-3xl bg-gradient-to-b to-transparent p-3", COLUMN_TONE[col.value])} aria-label={col.label}>
+                    <div className="mb-3 flex items-center justify-between px-2 pt-1">
+                      <h2 className="font-serif text-xl font-semibold">{col.label}</h2>
+                      <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs font-medium text-ink-700">{items.length}</span>
+                    </div>
+                    <ul className="space-y-3">{items.map((v) => renderCard(v, ci, true))}</ul>
+                    <button onClick={() => openNew(col.value)} className="mt-3 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-ink-300/60 text-sm text-ink-500 transition hover:border-rose-300 hover:bg-white/60 hover:text-rose-700">
+                      <Plus className="size-4" aria-hidden /> Toevoegen
+                    </button>
+                  </section>
+                );
+              })}
+            </div>
+          </LayoutGroup>
+        </>
       )}
 
       <Modal
