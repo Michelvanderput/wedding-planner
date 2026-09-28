@@ -321,7 +321,7 @@ export function InvitationView({ data, rsvp, banner, embedded, themeOverride, to
     <div
       className={cn(
         "relative mx-auto overflow-hidden shadow-[var(--shadow-lift)] ring-4 ring-white/70",
-        hero === "arch" ? "h-64 w-48 rounded-t-full rounded-b-3xl @md:h-80 @md:w-60" : "aspect-[4/5] w-full max-w-sm rounded-t-full rounded-b-3xl",
+        hero === "arch" ? "h-52 w-40 rounded-t-full rounded-b-3xl @md:h-72 @md:w-56 @3xl:h-80 @3xl:w-60" : "aspect-[4/5] w-44 rounded-t-full rounded-b-3xl @md:w-56 @3xl:w-full @3xl:max-w-sm",
       )}
     >
       {image ? (
@@ -587,7 +587,7 @@ export function InvitationView({ data, rsvp, banner, embedded, themeOverride, to
               {heroText}
             </div>
           ) : hero === "split" ? (
-            <div className="relative grid w-full max-w-5xl grid-cols-1 items-center gap-10 @3xl:grid-cols-2">
+            <div className="relative grid w-full max-w-5xl grid-cols-1 items-center gap-6 @3xl:grid-cols-2 @3xl:gap-10">
               <div className="@3xl:order-2">
                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.9 }}>
                   {photoFrame}

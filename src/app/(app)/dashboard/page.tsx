@@ -118,15 +118,15 @@ export default function Overview() {
               </div>
             </div>
             <div className="flex items-center gap-5 lg:flex-col">
-              <ProgressRing value={progress} size={148} stroke={12} label={`${Math.round(progress * 100)}% van de taken afgerond`}>
+              <ProgressRing value={progress} size={148} stroke={12} className="size-28 sm:size-[148px]" label={`${Math.round(progress * 100)}% van de taken afgerond`}>
                 <div className="text-center">
-                  <div className="stat text-4xl">
+                  <div className="stat text-3xl sm:text-4xl">
                     <CountUp value={progress * 100} />%
                   </div>
                   <div className="text-xs text-ink-500">klaar</div>
                 </div>
               </ProgressRing>
-              <p className="max-w-40 text-sm text-ink-700 lg:text-center">
+              <p className="max-w-40 min-w-0 text-sm text-ink-700 lg:text-center">
                 {progress >= 1 ? "Alles is geregeld. Geniet ervan!" : progress > 0.5 ? "Jullie zijn over de helft!" : "Goed bezig, stap voor stap."}
               </p>
             </div>
@@ -159,9 +159,9 @@ export default function Overview() {
         {/* Eerstvolgende taken */}
         <Rise className="lg:col-span-3">
           <section className="card h-full p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold">Eerstvolgende taken</h2>
-              <Link href="/dashboard/checklist" className="text-sm font-medium text-rose-700 hover:underline">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="text-xl font-semibold sm:text-2xl">Eerstvolgende taken</h2>
+              <Link href="/dashboard/checklist" className="shrink-0 text-sm font-medium whitespace-nowrap text-rose-700 hover:underline">
                 Alles bekijken
               </Link>
             </div>

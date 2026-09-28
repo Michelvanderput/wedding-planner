@@ -95,15 +95,15 @@ export default function BudgetPage() {
       {/* Samenvatting */}
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[auto_1fr]">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card flex flex-wrap items-center justify-center gap-6 p-6 sm:justify-start">
-          <ProgressRing value={budget ? t.actual / budget : 0} size={132} label={`${Math.round(budget ? (t.actual / budget) * 100 : 0)}% van het budget besteed`}>
+          <ProgressRing value={budget ? t.actual / budget : 0} size={132} className="size-28 sm:size-[132px]" label={`${Math.round(budget ? (t.actual / budget) * 100 : 0)}% van het budget besteed`}>
             <div className="text-center">
-              <div className="stat text-3xl">{Math.round(budget ? (t.actual / budget) * 100 : 0)}%</div>
+              <div className="stat text-2xl sm:text-3xl">{Math.round(budget ? (t.actual / budget) * 100 : 0)}%</div>
               <div className="text-xs text-ink-500">besteed</div>
             </div>
           </ProgressRing>
           <div>
             <p className="text-sm text-ink-500">Nog te besteden</p>
-            <p className={cn("stat text-4xl", remaining < 0 && "text-rose-700")}>
+            <p className={cn("stat text-3xl sm:text-4xl", remaining < 0 && "text-rose-700")}>
               <CountUp value={remaining} format={formatEuro} />
             </p>
             <p className="mt-1 text-sm text-ink-500">van {formatEuro(budget)}</p>

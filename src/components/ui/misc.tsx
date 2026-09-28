@@ -124,12 +124,15 @@ export function ProgressRing({
   stroke = 10,
   label,
   children,
+  className,
 }: {
   value: number; // 0..1
   size?: number;
   stroke?: number;
   label: string;
   children?: ReactNode;
+  /** Eigen (responsieve) afmeting, bijv. "size-28 sm:size-36"; anders `size` px. */
+  className?: string;
 }) {
   const reduce = useReducedMotion();
   const gradId = `ring-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
@@ -137,8 +140,8 @@ export function ProgressRing({
   const c = 2 * Math.PI * r;
   const v = Math.max(0, Math.min(1, value));
   return (
-    <div className="relative" style={{ width: size, height: size }} role="img" aria-label={label}>
-      <svg width={size} height={size} className="-rotate-90">
+    <div className={cn("relative shrink-0", className)} style={className ? undefined : { width: size, height: size }} role="img" aria-label={label}>
+      <svg viewBox={`0 0 ${size} ${size}`} className="size-full -rotate-90" aria-hidden>
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="var(--color-rose-500)" />

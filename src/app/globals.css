@@ -189,7 +189,7 @@
     display: none;
   }
   /* QR-code-svg vult zijn kader */
-  [role="img"] > svg {
+  .qr-box > svg {
     width: 100%;
     height: 100%;
   }

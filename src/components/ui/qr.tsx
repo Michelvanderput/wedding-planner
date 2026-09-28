@@ -32,7 +32,7 @@ export function QrCode({ value, size = 160, filename, className }: { value: stri
   return (
     <div className={cn("inline-flex flex-col items-center gap-2", className)}>
       <div
-        className="rounded-2xl bg-white p-2 ring-1 ring-line"
+        className="qr-box shrink-0 rounded-2xl bg-white p-2 ring-1 ring-line"
         style={{ width: size, height: size }}
         role="img"
         aria-label={`QR-code voor ${value}`}

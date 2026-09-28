@@ -69,7 +69,7 @@ export function Sprig({ className }: { className?: string }) {
         animate={{ pathLength: 1 }}
         transition={{ duration: 2, ease: "easeInOut" }}
       />
-      {[160, 125, 90, 55, 25].map((y, i) => (
+      {[172, 140, 108, 78, 50].map((y, i) => (
         <g key={y}>
           <motion.path
             d={`M60 ${y}C${40 - i * 2} ${y - 8} ${28} ${y - 26} ${30} ${y - 34}C${42} ${y - 30} ${56} ${y - 16} 60 ${y}z`}

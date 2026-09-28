@@ -60,10 +60,10 @@ export function Countdown({ date, time }: { date: string | null; time: string | 
   ];
 
   return (
-    <div className="flex gap-2 sm:gap-3" role="timer" aria-label={`Nog ${parts[0].v} dagen tot de bruiloft`}>
+    <div className="grid max-w-md grid-cols-4 gap-2 sm:gap-3" role="timer" aria-label={`Nog ${parts[0].v} dagen tot de bruiloft`}>
       {parts.map((p) => (
-        <div key={p.l} className="min-w-16 rounded-2xl bg-white/80 px-3 py-2.5 text-center ring-1 ring-white sm:min-w-20">
-          <div className="relative h-9 overflow-hidden font-serif text-3xl leading-9 font-semibold text-ink-900 sm:h-10 sm:text-4xl sm:leading-10">
+        <div key={p.l} className="min-w-0 rounded-2xl bg-white/80 px-1 py-2.5 text-center ring-1 ring-white sm:px-3">
+          <div className="stat relative h-8 overflow-hidden text-2xl leading-8 text-ink-900 sm:h-10 sm:text-3xl sm:leading-10">
             <motion.span
               key={now === null ? "x" : p.v}
               initial={{ y: "-100%", opacity: 0 }}
@@ -74,7 +74,7 @@ export function Countdown({ date, time }: { date: string | null; time: string | 
               {now === null ? "–" : p.v}
             </motion.span>
           </div>
-          <div className="text-[11px] tracking-wider text-ink-500 uppercase">{p.l}</div>
+          <div className="truncate text-[10px] tracking-wider text-ink-500 uppercase sm:text-[11px]">{p.l}</div>
         </div>
       ))}
     </div>
