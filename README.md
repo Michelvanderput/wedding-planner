@@ -67,12 +67,11 @@ Open http://localhost:3000.
 ## Supabase koppelen
 
 1. Maak een project aan op [supabase.com](https://supabase.com).
-2. Ga naar **SQL Editor** en voer **op volgorde** uit (plakken → **Run**):
-   1. [`supabase/migrations/20260927000000_init.sql`](supabase/migrations/20260927000000_init.sql)
-   2. [`supabase/migrations/20260928000000_invitation_and_partner.sql`](supabase/migrations/20260928000000_invitation_and_partner.sql)
-   3. [`supabase/migrations/20260929000000_features.sql`](supabase/migrations/20260929000000_features.sql): taken toewijzen, betaaldata, menukeuze, cadeaulijst, fotolijst, gastenboek en documentopslag
+2. Maak de tabellen aan. Kies één van beide:
+   - **Eenvoudigst:** open **SQL Editor → New query**, plak de volledige inhoud van [`supabase/setup.sql`](supabase/setup.sql) en klik **Run**. Dat zijn alle migraties in één transactie; opnieuw draaien kan veilig.
+   - **Automatisch via GitHub:** Supabase → **Project Settings → Integrations → GitHub**: koppel deze repo, zet *Supabase directory* op `.` (de map waarin `supabase/` staat), *Production branch* op de branch die je deployt en zet **Deploy to production** aan. Nieuwe bestanden in `supabase/migrations/` worden dan bij elke push uitgevoerd.
 
-   Alle scripts kun je veilig opnieuw draaien. Is de derde nog niet uitgevoerd, dan werkt de rest van de app gewoon; alleen de nieuwe onderdelen laten dan een melding zien. (Of met de CLI: `supabase link --project-ref <ref>` en daarna `supabase db push`.)
+   Of met de CLI: `supabase link --project-ref <ref>` en daarna `supabase db push`.
 3. Kopieer uit **Project Settings → API** de *Project URL* en de *anon public key* naar:
    ```
    NEXT_PUBLIC_SUPABASE_URL=...

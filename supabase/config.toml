@@ -1,6 +1,5 @@
 # Supabase CLI / GitHub-integratie. Migraties staan in ./migrations.
+# Bewust geen [auth]-instellingen hier: die zou de GitHub-integratie anders naar je
+# live project kunnen schrijven. Stel Site URL en Redirect URLs in via het Supabase-dashboard
+# (Authentication → URL Configuration).
 project_id = "wedding-planner"
-
-[auth]
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000/auth/callback"]
